@@ -76,7 +76,16 @@ func main() {
 		messageProducer := producer.NewMessageProducer(producerConfig)
 		headers := make(map[string]string)
 		messageProducer.SendMessage("", producer.Message{Headers: headers, Body: ""})
-		launchConsumer(consumerConfig)
+
+		hc := &healthcheck{client: http.Client{}, consumerConf: consumerConfig}
+		http.HandleFunc("/__health", hc.healthcheck())
+		http.HandleFunc("/__gtg", hc.gtg)
+		go func() {
+			err := http.ListenAndServe(":8080", nil)
+			errorLogger.Println(err)
+		}()
+
+		consumeUntilSigterm(consumerConfig)
 	}
 	err := app.Run(os.Args)
 	if err != nil {
@@ -84,7 +93,7 @@ func main() {
 	}
 }
 
-func launchConsumer(consumerConfig consumer.QueueConfig) {
+func consumeUntilSigterm(consumerConfig consumer.QueueConfig) {
 	messageConsumer := consumer.NewConsumer(consumerConfig, func(m consumer.Message) { infoLogger.Println(m) }, http.Client{})
 	infoLogger.Printf("Starting queue consumer: %# v", pretty.Formatter(messageConsumer))
 	var consumerWaitGroup sync.WaitGroup
