@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
+	"github.com/Financial-Times/message-queue-go-producer/producer"
 	"github.com/jawher/mow.cli"
 	"os"
 	"net/http"
@@ -37,18 +38,18 @@ func main() {
 		Desc:   "The queue to read the meassages from.",
 		EnvVar: "Q_READ_QUEUE",
 	})
-	//writeTopic := app.String(cli.StringOpt{
-	//	Name:   "write-topic",
-	//	Value:  "",
-	//	Desc:   "The topic to write the meassages to.",
-	//	EnvVar: "Q_WRITE_TOPIC",
-	//})
-	//writeQueue := app.String(cli.StringOpt{
-	//	Name:   "write-queue",
-	//	Value:  "",
-	//	Desc:   "The queue to write the meassages to.",
-	//	EnvVar: "Q_WRITE_QUEUE",
-	//})
+	writeTopic := app.String(cli.StringOpt{
+		Name:   "write-topic",
+		Value:  "",
+		Desc:   "The topic to write the meassages to.",
+		EnvVar: "Q_WRITE_TOPIC",
+	})
+	writeQueue := app.String(cli.StringOpt{
+		Name:   "write-queue",
+		Value:  "",
+		Desc:   "The queue to write the meassages to.",
+		EnvVar: "Q_WRITE_QUEUE",
+	})
 	authorization := app.String(cli.StringOpt{
 		Name:   "authorization",
 		Value:  "",
@@ -66,6 +67,15 @@ func main() {
 			ConcurrentProcessing: false,
 			AuthorizationKey: *authorization,
 		}
+		producerConfig := producer.MessageProducerConfig{
+			Addr: (*addresses)[0],
+			Topic: *writeTopic,
+			Queue: *writeQueue,
+			Authorization: *authorization,
+		}
+		messageProducer := producer.NewMessageProducer(producerConfig)
+		headers := make(map[string]string)
+		messageProducer.SendMessage("", producer.Message{Headers: headers, Body: ""})
 		launchConsumer(consumerConfig)
 	}
 	err := app.Run(os.Args)
