@@ -10,7 +10,19 @@ import (
 	"sync"
 	"os/signal"
 	"syscall"
+	"encoding/json"
 )
+
+type content struct {
+	id string `json:"id"`
+	webUrl string `json:"webUrl"`
+	types []string `json:"types"`
+}
+
+type videoMapper struct {
+	messageConsumer *consumer.Consumer
+	messageProducer *producer.MessageProducer
+}
 
 func main() {
 	app := cli.App("video-mapper", "Catch native video content transform into Content and send back to queue.")
@@ -76,7 +88,9 @@ func main() {
 		messageProducer := producer.NewMessageProducer(producerConfig)
 		headers := make(map[string]string)
 		messageProducer.SendMessage("", producer.Message{Headers: headers, Body: ""})
-
+		var v videoMapper
+		messageConsumer := consumer.NewConsumer(consumerConfig, v.mapping, http.Client{})
+		v = videoMapper{&messageConsumer, &messageProducer}
 		hc := &healthcheck{client: http.Client{}, consumerConf: consumerConfig}
 		http.HandleFunc("/__health", hc.healthcheck())
 		http.HandleFunc("/__gtg", hc.gtg)
@@ -84,8 +98,7 @@ func main() {
 			err := http.ListenAndServe(":8080", nil)
 			errorLogger.Println(err)
 		}()
-
-		consumeUntilSigterm(consumerConfig)
+		v.consumeUntilSigterm()
 	}
 	err := app.Run(os.Args)
 	if err != nil {
@@ -93,18 +106,40 @@ func main() {
 	}
 }
 
-func consumeUntilSigterm(consumerConfig consumer.QueueConfig) {
-	messageConsumer := consumer.NewConsumer(consumerConfig, func(m consumer.Message) { infoLogger.Println(m) }, http.Client{})
-	infoLogger.Printf("Starting queue consumer: %# v", pretty.Formatter(messageConsumer))
+func (v videoMapper) consumeUntilSigterm() {
+	infoLogger.Printf("Starting queue consumer: %# v", pretty.Formatter(v.messageConsumer))
 	var consumerWaitGroup sync.WaitGroup
 	consumerWaitGroup.Add(1)
 	go func() {
-		messageConsumer.Start()
+		v.messageConsumer.Start()
 		consumerWaitGroup.Done()
 	}()
 	ch := make(chan os.Signal)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 	<-ch
-	messageConsumer.Stop()
+	v.messageConsumer.Stop()
 	consumerWaitGroup.Wait()
+}
+
+func (v videoMapper) mapping(m consumer.Message) {
+	var brightcoveVideo map[string]interface{}
+	if err := json.Unmarshal([]byte(m.Body), &brightcoveVideo); err != nil {
+		infoLogger.Printf("Video JSON from Brightcove couldn't be unmarshalled. Ignoring not valid JSON: %v", m.Body)
+		return
+	}
+
+	id := brightcoveVideo["uuid"].(string)
+	cocoVideo := content{
+		id: id,
+		webUrl: "http://video.ft.com/" + brightcoveVideo["id"].(string),
+		types: []string{"http://www.ft.com/ontology/content/Video"},
+	}
+
+	cocoVideoS, err := json.Marshal(cocoVideo)
+	if (err != nil) {
+		infoLogger.Printf("Video couldn't be marshalled from struct to JSON string. Ignoring: %v", cocoVideo)
+	}
+
+	(*v.messageProducer).SendMessage(id, producer.Message{Headers: m.Headers, Body: string(cocoVideoS)})
+	infoLogger.Printf("sending %v", m)
 }
