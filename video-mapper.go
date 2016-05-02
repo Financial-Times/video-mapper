@@ -140,6 +140,6 @@ func (v videoMapper) mapping(m consumer.Message) {
 		infoLogger.Printf("Video couldn't be marshalled from struct to JSON string. Ignoring: %v", cocoVideo)
 	}
 
-	(*v.messageProducer).SendMessage(id, producer.Message{Headers: m.Headers, Body: string(cocoVideoS)})
-	infoLogger.Printf("sending %v", m)
+	//(*v.messageProducer).SendMessage(id, producer.Message{Headers: m.Headers, Body: string(cocoVideoS)})
+	infoLogger.Printf("sending %v", cocoVideoS)
 }
