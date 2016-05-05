@@ -11,12 +11,31 @@ import (
 	"os/signal"
 	"syscall"
 	"encoding/json"
+	"path/filepath"
 )
 
-type content struct {
-	id string `json:"id"`
-	webUrl string `json:"webUrl"`
-	types []string `json:"types"`
+const videoContentUriBase = "http://video-mapper-iw-uk-p.svc.ft.com/video/model/"
+const brigthcoveAuthority = "http://api.ft.com/system/BRIGHTCOVE"
+const viodeMediaTypeBase = "video/"
+
+type publicationEvent struct {
+	contentUri string `json:"contentUri"`
+	payload string `json:"payload"`
+	lastModified string `json:"lastModified"`
+}
+
+type identifier struct {
+	authority string `json:"authority"`
+	identifierValue string `json:"identifierValue"`
+}
+
+type payload struct {
+	uuid string `json:"uuid"`
+	identifiers []identifier `json:"identifiers"`
+	publishedDate string `json:"publishedDate"`
+	mediaType string `json:"mediaType"`
+	publishReference string `json:"publishReference"`
+	lastModified string `json:"lastModified"`
 }
 
 type videoMapper struct {
@@ -127,19 +146,65 @@ func (v videoMapper) mapping(m consumer.Message) {
 		infoLogger.Printf("Video JSON from Brightcove couldn't be unmarshalled. Ignoring not valid JSON: %v", m.Body)
 		return
 	}
-
-	id := brightcoveVideo["uuid"].(string)
-	cocoVideo := content{
-		id: id,
-		webUrl: "http://video.ft.com/" + brightcoveVideo["id"].(string),
-		types: []string{"http://www.ft.com/ontology/content/Video"},
+	uuid := brightcoveVideo["uuid"].(string)
+	contentUri := videoContentUriBase + uuid
+	if uuid == nil {
+		contentUri = nil
+		warnLogger.Printf("uuid field of native brightcove video JSON is null. uuid and contentUri will be null.")
+	}
+	id := brightcoveVideo["id"].(string)
+	if id == nil {
+		warnLogger.Printf("id field of native brightcove video JSON is null. identifier will be null.")
+	}
+	publishedDate := brightcoveVideo["updated_at"].(string)
+	if publishedDate == nil {
+		warnLogger.Printf("updated_at field of native brightcove video JSON is null, publisedDate will be null.")
+	}
+	extension := filepath.Ext(brightcoveVideo["name"].(string))
+	mediaType := viodeMediaTypeBase + extension
+	publishReference := m.Headers["X-Request-Id"]
+	if publishReference == nil {
+		warnLogger.Printf("X-Request-Id not found in kafka message headers. publishReference will be null.")
+	}
+	lastModified := m.Headers["Message-Timestamp"]
+	if lastModified == nil {
+		warnLogger.Printf("Message-Timestamp not found in kafka message headers. lastModified will be null.")
 	}
 
-	cocoVideoS, err := json.Marshal(cocoVideo)
-	if (err != nil) {
-		infoLogger.Printf("Video couldn't be marshalled from struct to JSON string. Ignoring: %v", cocoVideo)
+	i := identifier{
+		authority: brigthcoveAuthority,
+		identifierValue: id,
 	}
+	p := payload{
+		uuid: uuid,
+		identifiers: []identifier {i},
+		publishedDate: publishedDate,
+		mediaType: mediaType,
+		publishReference: publishReference,
+		lastModified: lastModified,
+	}
+	marshalledPayload, err := json.Marshal(p)
+	if err != nil {
+		warnLogger.Printf("Couldn't marshall payload %v, skipping message.", p)
+		return
+	}
+	e := publicationEvent{
+		contentUri: contentUri,
+		payload: marshalledPayload,
+		lastModified: lastModified,
+	}
+	marshalledEvent, err := json.Marshal(e)
+	if err != nil {
+		warnLogger.Printf("Couldn't marshall event %v, skipping message.", e)
+		return
+	}
+	//		payload: "http://video.ft.com/" + brightcoveVideo["id"].(string),
+
+	//		lastModified: []string{"http://www.ft.com/ontology/content/Video"},
+	//ss := "{\"name\":\"Huni\"}"
+	//fmt.Println(ss)
+	//fmt.Println(strconv.Quote(ss))
 
 	//(*v.messageProducer).SendMessage(id, producer.Message{Headers: m.Headers, Body: string(cocoVideoS)})
-	infoLogger.Printf("sending %v", cocoVideoS)
+	infoLogger.Printf("sending %v", marshalledEvent)
 }
