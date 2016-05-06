@@ -1,17 +1,17 @@
 package main
 
 import (
-	"github.com/Financial-Times/message-queue-gonsumer/consumer"
-	"github.com/Financial-Times/message-queue-go-producer/producer"
-	"github.com/jawher/mow.cli"
-	"os"
-	"net/http"
-	"github.com/kr/pretty"
-	"sync"
-	"os/signal"
-	"syscall"
 	"encoding/json"
+	"github.com/Financial-Times/message-queue-go-producer/producer"
+	"github.com/Financial-Times/message-queue-gonsumer/consumer"
+	"github.com/jawher/mow.cli"
+	"github.com/kr/pretty"
+	"net/http"
+	"os"
+	"os/signal"
 	"path/filepath"
+	"sync"
+	"syscall"
 )
 
 const videoContentUriBase = "http://video-mapper-iw-uk-p.svc.ft.com/video/model/"
@@ -19,23 +19,23 @@ const brigthcoveAuthority = "http://api.ft.com/system/BRIGHTCOVE"
 const viodeMediaTypeBase = "video/"
 
 type publicationEvent struct {
-	contentUri string `json:"contentUri"`
-	payload string `json:"payload"`
+	contentUri   string `json:"contentUri"`
+	payload      string `json:"payload"`
 	lastModified string `json:"lastModified"`
 }
 
 type identifier struct {
-	authority string `json:"authority"`
+	authority       string `json:"authority"`
 	identifierValue string `json:"identifierValue"`
 }
 
 type payload struct {
-	uuid string `json:"uuid"`
-	identifiers []identifier `json:"identifiers"`
-	publishedDate string `json:"publishedDate"`
-	mediaType string `json:"mediaType"`
-	publishReference string `json:"publishReference"`
-	lastModified string `json:"lastModified"`
+	uuid             string       `json:"uuid"`
+	identifiers      []identifier `json:"identifiers"`
+	publishedDate    string       `json:"publishedDate"`
+	mediaType        string       `json:"mediaType"`
+	publishReference string       `json:"publishReference"`
+	lastModified     string       `json:"lastModified"`
 }
 
 type videoMapper struct {
@@ -91,17 +91,17 @@ func main() {
 		initLogs(os.Stdout, os.Stdout, os.Stderr)
 		infoLogger.Println("Hi.")
 		consumerConfig := consumer.QueueConfig{
-			Addrs: *addresses,
-			Group: *group,
-			Topic: *readTopic,
-			Queue: *readQueue,
+			Addrs:                *addresses,
+			Group:                *group,
+			Topic:                *readTopic,
+			Queue:                *readQueue,
 			ConcurrentProcessing: false,
-			AuthorizationKey: *authorization,
+			AuthorizationKey:     *authorization,
 		}
 		producerConfig := producer.MessageProducerConfig{
-			Addr: (*addresses)[0],
-			Topic: *writeTopic,
-			Queue: *writeQueue,
+			Addr:          (*addresses)[0],
+			Topic:         *writeTopic,
+			Queue:         *writeQueue,
 			Authorization: *authorization,
 		}
 		messageProducer := producer.NewMessageProducer(producerConfig)
@@ -148,40 +148,40 @@ func (v videoMapper) mapping(m consumer.Message) {
 	}
 	uuid := brightcoveVideo["uuid"].(string)
 	contentUri := videoContentUriBase + uuid
-	if uuid == nil {
-		contentUri = nil
+	if uuid == "" {
+		contentUri = ""
 		warnLogger.Printf("uuid field of native brightcove video JSON is null. uuid and contentUri will be null.")
 	}
 	id := brightcoveVideo["id"].(string)
-	if id == nil {
+	if id == "" {
 		warnLogger.Printf("id field of native brightcove video JSON is null. identifier will be null.")
 	}
 	publishedDate := brightcoveVideo["updated_at"].(string)
-	if publishedDate == nil {
+	if publishedDate == "" {
 		warnLogger.Printf("updated_at field of native brightcove video JSON is null, publisedDate will be null.")
 	}
 	extension := filepath.Ext(brightcoveVideo["name"].(string))
 	mediaType := viodeMediaTypeBase + extension
 	publishReference := m.Headers["X-Request-Id"]
-	if publishReference == nil {
+	if publishReference == "" {
 		warnLogger.Printf("X-Request-Id not found in kafka message headers. publishReference will be null.")
 	}
 	lastModified := m.Headers["Message-Timestamp"]
-	if lastModified == nil {
+	if lastModified == "" {
 		warnLogger.Printf("Message-Timestamp not found in kafka message headers. lastModified will be null.")
 	}
 
 	i := identifier{
-		authority: brigthcoveAuthority,
+		authority:       brigthcoveAuthority,
 		identifierValue: id,
 	}
 	p := payload{
-		uuid: uuid,
-		identifiers: []identifier {i},
-		publishedDate: publishedDate,
-		mediaType: mediaType,
+		uuid:             uuid,
+		identifiers:      []identifier{i},
+		publishedDate:    publishedDate,
+		mediaType:        mediaType,
 		publishReference: publishReference,
-		lastModified: lastModified,
+		lastModified:     lastModified,
 	}
 	marshalledPayload, err := json.Marshal(p)
 	if err != nil {
@@ -189,8 +189,8 @@ func (v videoMapper) mapping(m consumer.Message) {
 		return
 	}
 	e := publicationEvent{
-		contentUri: contentUri,
-		payload: marshalledPayload,
+		contentUri:   contentUri,
+		payload:      string(marshalledPayload),
 		lastModified: lastModified,
 	}
 	marshalledEvent, err := json.Marshal(e)
