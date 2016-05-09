@@ -142,7 +142,6 @@ func (v videoMapper) consumeUntilSigterm() {
 }
 
 func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
-	infoLogger.Println("/map request")
 	var brightcoveVideo map[string]interface{}
 
 	err := json.NewDecoder(r.Body).Decode(&brightcoveVideo)
@@ -183,7 +182,6 @@ func (v videoMapper) consume(m consumer.Message) {
 }
 
 func (v videoMapper) mapping(brightcoveVideo map[string]interface{}, publishReference, lastModified string) ([]byte, error) {
-	infoLogger.Println("mapping()")
 	uuid := brightcoveVideo["uuid"].(string)
 	contentUri := videoContentUriBase + uuid
 	if uuid == "" {
@@ -212,7 +210,6 @@ func (v videoMapper) mapping(brightcoveVideo map[string]interface{}, publishRefe
 		PublishReference: publishReference,
 		LastModified:     lastModified,
 	}
-	infoLogger.Printf("payload: [%#v]", p)
 	marshalledPayload, err := json.Marshal(p)
 	if err != nil {
 		warnLogger.Printf("Couldn't marshall payload %v, skipping message.", p)
@@ -223,7 +220,6 @@ func (v videoMapper) mapping(brightcoveVideo map[string]interface{}, publishRefe
 		Payload:      string(marshalledPayload),
 		LastModified: lastModified,
 	}
-	infoLogger.Printf("publicationEvent: [%#v]", e)
 	marshalledEvent, err := json.Marshal(e)
 	if err != nil {
 		warnLogger.Printf("Couldn't marshall event %v, skipping message.", e)
