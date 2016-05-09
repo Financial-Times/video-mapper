@@ -2,16 +2,19 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/Financial-Times/message-queue-go-producer/producer"
-	"github.com/Financial-Times/message-queue-gonsumer/consumer"
-	"github.com/jawher/mow.cli"
-	"github.com/kr/pretty"
 	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"syscall"
+
+	"github.com/Financial-Times/message-queue-go-producer/producer"
+	"github.com/Financial-Times/message-queue-gonsumer/consumer"
+	"github.com/gorilla/mux"
+	"github.com/jawher/mow.cli"
+	"github.com/kr/pretty"
 )
 
 const videoContentUriBase = "http://video-mapper-iw-uk-p.svc.ft.com/video/model/"
@@ -111,18 +114,27 @@ func main() {
 		messageConsumer := consumer.NewConsumer(consumerConfig, v.consume, http.Client{})
 		v = videoMapper{&messageConsumer, &messageProducer}
 		hc := &healthcheck{client: http.Client{}, consumerConf: consumerConfig}
-		http.HandleFunc("/map", v.mapHandler)
-		http.HandleFunc("/__health", hc.healthcheck())
-		http.HandleFunc("/__gtg", hc.gtg)
-		go func() {
-			err := http.ListenAndServe(":8080", nil)
-			errorLogger.Println(err)
-		}()
+		go v.listen(hc)
 		v.consumeUntilSigterm()
 	}
 	err := app.Run(os.Args)
 	if err != nil {
 		println(err)
+	}
+}
+
+func (v videoMapper) listen(hc *healthcheck) {
+	r := mux.NewRouter()
+	r.HandleFunc("/map", v.mapHandler).Methods("POST")
+	r.HandleFunc("/__health", hc.healthcheck()).Methods("GET")
+	r.HandleFunc("/__gtg", hc.gtg).Methods("GET")
+
+	http.Handle("/", r)
+	port := 8080 //hardcoded for now
+	infoLogger.Printf("Starting to listen on port [%d]", port)
+	err := http.ListenAndServe(":"+strconv.Itoa(port), nil)
+	if err != nil {
+		errorLogger.Panicf("Couldn't set up HTTP listener: %+v\n", err)
 	}
 }
 
