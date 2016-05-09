@@ -19,23 +19,23 @@ const brigthcoveAuthority = "http://api.ft.com/system/BRIGHTCOVE"
 const viodeMediaTypeBase = "video/"
 
 type publicationEvent struct {
-	contentUri   string `json:"contentUri"`
-	payload      string `json:"payload"`
-	lastModified string `json:"lastModified"`
+	ContentUri   string `json:"contentUri"`
+	Payload      string `json:"payload"`
+	LastModified string `json:"lastModified"`
 }
 
 type identifier struct {
-	authority       string `json:"authority"`
-	identifierValue string `json:"identifierValue"`
+	Authority       string `json:"authority"`
+	IdentifierValue string `json:"identifierValue"`
 }
 
 type payload struct {
-	uuid             string       `json:"uuid"`
-	identifiers      []identifier `json:"identifiers"`
-	publishedDate    string       `json:"publishedDate"`
-	mediaType        string       `json:"mediaType"`
-	publishReference string       `json:"publishReference"`
-	lastModified     string       `json:"lastModified"`
+	UUID             string       `json:"uuid"`
+	Identifiers      []identifier `json:"identifiers"`
+	PublishedDate    string       `json:"publishedDate"`
+	MediaType        string       `json:"mediaType"`
+	PublishReference string       `json:"publishReference"`
+	LastModified     string       `json:"lastModified"`
 }
 
 type videoMapper struct {
@@ -201,16 +201,16 @@ func (v videoMapper) mapping(brightcoveVideo map[string]interface{}, publishRefe
 	extension := filepath.Ext(brightcoveVideo["name"].(string))
 	mediaType := viodeMediaTypeBase + extension
 	i := identifier{
-		authority:       brigthcoveAuthority,
-		identifierValue: id,
+		Authority:       brigthcoveAuthority,
+		IdentifierValue: id,
 	}
 	p := payload{
-		uuid:             uuid,
-		identifiers:      []identifier{i},
-		publishedDate:    publishedDate,
-		mediaType:        mediaType,
-		publishReference: publishReference,
-		lastModified:     lastModified,
+		UUID:             uuid,
+		Identifiers:      []identifier{i},
+		PublishedDate:    publishedDate,
+		MediaType:        mediaType,
+		PublishReference: publishReference,
+		LastModified:     lastModified,
 	}
 	infoLogger.Printf("payload: [%#v]", p)
 	marshalledPayload, err := json.Marshal(p)
@@ -219,9 +219,9 @@ func (v videoMapper) mapping(brightcoveVideo map[string]interface{}, publishRefe
 		return nil, err
 	}
 	e := publicationEvent{
-		contentUri:   contentUri,
-		payload:      string(marshalledPayload),
-		lastModified: lastModified,
+		ContentUri:   contentUri,
+		Payload:      string(marshalledPayload),
+		LastModified: lastModified,
 	}
 	infoLogger.Printf("publicationEvent: [%#v]", e)
 	marshalledEvent, err := json.Marshal(e)
