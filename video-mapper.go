@@ -20,6 +20,7 @@ import (
 	"strings"
 )
 
+const tidValidRegexp = "(tid|SYNTHETIC-REQ-MON)[a-zA-Z0-9_-]*$"
 const videoContentUriBase = "http://video-mapper-iw-uk-p.svc.ft.com/video/model/"
 const brigthcoveAuthority = "http://api.ft.com/system/BRIGHTCOVE"
 const viodeMediaTypeBase = "video/"
@@ -179,7 +180,7 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 		Body: string(body),
 		Headers: map[string]string{
 			"X-Request-Id":      r.Header.Get("X-Request-Id"),
-			"Message-Timestamp": r.Header.Get("Message-Timestamp"),
+			"Message-Timestamp": r.Header.Get("X-Message-Timestamp"),
 		},
 	}
 	mappedVideoBytes, err := v.httpConsume(m)
@@ -191,24 +192,24 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (v videoMapper) httpConsume(m consumer.Message) ([]byte, error) {
+	tid := m.Headers["X-Request-Id"]
 	marshalledEvent, err := v.mapMessage(m)
+
 	if err != nil {
-		warnLogger.Printf("Mapping error: [%v]", err.Error())
+		warnLogger.Printf("%v - Mapping error: [%v]", tid, err.Error())
 		return nil, err
 	}
 	return marshalledEvent, nil
 }
 
 func (v videoMapper) queueConsume(m consumer.Message) {
+	tid := m.Headers["X-Request-Id"]
 	if m.Headers["Origin-System-Id"] != brightcoveOrigin {
+		infoLogger.Printf("%v - Ignoring message with different Origin-System-Id %v", tid, m.Headers["Origin-System-Id"])
 		return
 	}
-	marshalledEvent, err := v.mapMessage(m)
-	if err != nil {
-		warnLogger.Printf("Mapping error: [%v]", err.Error())
-		return
-	}
-	infoLogger.Printf("Sending %v", marshalledEvent)
+	marshalledEvent, _ := v.httpConsume(m)
+	infoLogger.Printf("%v - Sending %v", tid, marshalledEvent)
 	//(*v.messageProducer).SendMessage(id, producer.Message{Headers: m.Headers, Body: string(cocoVideoS)})
 }
 
