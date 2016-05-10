@@ -16,6 +16,7 @@ import (
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
+	"io/ioutil"
 	"strings"
 )
 
@@ -125,7 +126,7 @@ func main() {
 		headers := make(map[string]string)
 		messageProducer.SendMessage("", producer.Message{Headers: headers, Body: ""})
 		var v videoMapper
-		messageConsumer := consumer.NewConsumer(consumerConfig, v.consume, http.Client{})
+		messageConsumer := consumer.NewConsumer(consumerConfig, v.queueConsume, http.Client{})
 		v = videoMapper{&messageConsumer, &messageProducer}
 		hc := &healthcheck{client: http.Client{}, consumerConf: consumerConfig}
 		go v.listen(hc)
@@ -168,32 +169,37 @@ func (v videoMapper) consumeUntilSigterm() {
 }
 
 func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
-	var brightcoveVideo map[string]interface{}
-
-	err := json.NewDecoder(r.Body).Decode(&brightcoveVideo)
+	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
+		w.Write([]byte(err.Error()))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	publishReference := r.Header.Get("X-Request-Id")
-	if publishReference == "" {
-		warnLogger.Printf("X-Request-Id not found in kafka message headers. Skipping message.")
-		return
+	m := consumer.Message{
+		Body: string(body),
+		Headers: map[string]string{
+			"X-Request-Id":      r.Header.Get("X-Request-Id"),
+			"Message-Timestamp": r.Header.Get("Message-Timestamp"),
+		},
 	}
-	lastModified := r.Header.Get("Message-Timestamp")
-	if lastModified == "" {
-		warnLogger.Printf("Message-Timestamp not found in kafka message headers. Skipping message.")
-		return
-	}
-	mappedVideoBytes, err := v.mapBrightcoveVideo(brightcoveVideo, publishReference, lastModified)
+	mappedVideoBytes, err := v.httpConsume(m)
 	if err != nil {
+		w.Write([]byte(err.Error()))
 		w.WriteHeader(http.StatusBadRequest)
-		return
 	}
 	w.Write(mappedVideoBytes)
 }
 
-func (v videoMapper) consume(m consumer.Message) {
+func (v videoMapper) httpConsume(m consumer.Message) ([]byte, error) {
+	marshalledEvent, err := v.mapMessage(m)
+	if err != nil {
+		warnLogger.Printf("Mapping error: [%v]", err.Error())
+		return nil, err
+	}
+	return marshalledEvent, nil
+}
+
+func (v videoMapper) queueConsume(m consumer.Message) {
 	if m.Headers["Origin-System-Id"] != brightcoveOrigin {
 		return
 	}
