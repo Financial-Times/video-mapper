@@ -22,6 +22,7 @@ import (
 const videoContentUriBase = "http://video-mapper-iw-uk-p.svc.ft.com/video/model/"
 const brigthcoveAuthority = "http://api.ft.com/system/BRIGHTCOVE"
 const viodeMediaTypeBase = "video/"
+const brightcoveOrigin = "http://cmdb.ft.com/systems/brightcove"
 
 type publicationEvent struct {
 	ContentUri   string `json:"contentUri"`
@@ -174,7 +175,17 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	mappedVideoBytes, err := v.mapBrightcoveVideo(brightcoveVideo, r.Header.Get("X-Request-Id"), r.Header.Get("Message-Timestamp"))
+	publishReference := r.Header.Get("X-Request-Id")
+	if publishReference == "" {
+		warnLogger.Printf("X-Request-Id not found in kafka message headers. Skipping message.")
+		return
+	}
+	lastModified := r.Header.Get("Message-Timestamp")
+	if lastModified == "" {
+		warnLogger.Printf("Message-Timestamp not found in kafka message headers. Skipping message.")
+		return
+	}
+	mappedVideoBytes, err := v.mapBrightcoveVideo(brightcoveVideo, publishReference, lastModified)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -183,6 +194,9 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (v videoMapper) consume(m consumer.Message) {
+	if m.Headers["Origin-System-Id"] != brightcoveOrigin {
+		return
+	}
 	marshalledEvent, err := v.mapMessage(m)
 	if err != nil {
 		warnLogger.Printf("Mapping error: [%v]", err.Error())
