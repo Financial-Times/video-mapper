@@ -15,6 +15,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
 	"github.com/kr/pretty"
+	"strings"
 )
 
 const videoContentUriBase = "http://video-mapper-iw-uk-p.svc.ft.com/video/model/"
@@ -161,7 +162,7 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	mappedVideoBytes, err := v.mapping(brightcoveVideo, r.Header.Get("X-Request-Id"), r.Header.Get("Message-Timestamp"))
+	mappedVideoBytes, err := v.mapBrightcoveVideo(brightcoveVideo, r.Header.Get("X-Request-Id"), r.Header.Get("Message-Timestamp"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -170,10 +171,20 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (v videoMapper) consume(m consumer.Message) {
+	marshalledEvent, err := v.mapMessage(m)
+	if err != nil {
+		warnLogger.Printf("Mapping error: [%v]", err)
+		return
+	}
+	infoLogger.Printf("sending %v", marshalledEvent)
+	//(*v.messageProducer).SendMessage(id, producer.Message{Headers: m.Headers, Body: string(cocoVideoS)})
+}
+
+func (v videoMapper) mapMessage(m consumer.Message) ([]byte, error) {
 	var brightcoveVideo map[string]interface{}
 	if err := json.Unmarshal([]byte(m.Body), &brightcoveVideo); err != nil {
 		infoLogger.Printf("Video JSON from Brightcove couldn't be unmarshalled. Ignoring not valid JSON: %v", m.Body)
-		return
+		return nil, err
 	}
 	publishReference := m.Headers["X-Request-Id"]
 	if publishReference == "" {
@@ -183,17 +194,10 @@ func (v videoMapper) consume(m consumer.Message) {
 	if lastModified == "" {
 		warnLogger.Printf("Message-Timestamp not found in kafka message headers. lastModified will be null.")
 	}
-
-	marshalledEvent, err := v.mapping(brightcoveVideo, publishReference, lastModified)
-	if err != nil {
-		warnLogger.Printf("Mapping error: [%v]", err)
-		return
-	}
-	//(*v.messageProducer).SendMessage(id, producer.Message{Headers: m.Headers, Body: string(cocoVideoS)})
-	infoLogger.Printf("sending %v", marshalledEvent)
+	return v.mapBrightcoveVideo(brightcoveVideo, publishReference, lastModified)
 }
 
-func (v videoMapper) mapping(brightcoveVideo map[string]interface{}, publishReference, lastModified string) ([]byte, error) {
+func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, publishReference, lastModified string) ([]byte, error) {
 	uuid := brightcoveVideo["uuid"].(string)
 	contentUri := videoContentUriBase + uuid
 	if uuid == "" {
@@ -208,7 +212,11 @@ func (v videoMapper) mapping(brightcoveVideo map[string]interface{}, publishRefe
 	if publishedDate == "" {
 		warnLogger.Printf("updated_at field of native brightcove video JSON is null, publisedDate will be null.")
 	}
-	extension := filepath.Ext(brightcoveVideo["name"].(string))
+	fileName := brightcoveVideo["name"].(string)
+	if fileName == "" {
+		warnLogger.Printf("filename field of native brightcove video JSON is null, type will be video/.")
+	}
+	extension := strings.TrimPrefix(filepath.Ext(fileName), ".")
 	mediaType := viodeMediaTypeBase + extension
 	i := identifier{
 		Authority:       brigthcoveAuthority,
@@ -227,6 +235,7 @@ func (v videoMapper) mapping(brightcoveVideo map[string]interface{}, publishRefe
 		warnLogger.Printf("Couldn't marshall payload %v, skipping message.", p)
 		return nil, err
 	}
+	//fmt.Println(strconv.Quote(ss))
 	e := publicationEvent{
 		ContentUri:   contentUri,
 		Payload:      string(marshalledPayload),
@@ -237,11 +246,5 @@ func (v videoMapper) mapping(brightcoveVideo map[string]interface{}, publishRefe
 		warnLogger.Printf("Couldn't marshall event %v, skipping message.", e)
 		return nil, err
 	}
-	//		payload: "http://video.ft.com/" + brightcoveVideo["id"].(string),
-
-	//		lastModified: []string{"http://www.ft.com/ontology/content/Video"},
-	//ss := "{\"name\":\"Huni\"}"
-	//fmt.Println(ss)
-	//fmt.Println(strconv.Quote(ss))
 	return marshalledEvent, nil
 }
