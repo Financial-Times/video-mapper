@@ -10,13 +10,13 @@ import (
 	"sync"
 	"syscall"
 
+	"errors"
+	"fmt"
 	"github.com/Financial-Times/message-queue-go-producer/producer"
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
 	"strings"
-	"errors"
-	"fmt"
 )
 
 const videoContentUriBase = "http://video-mapper-iw-uk-p.svc.ft.com/video/model/"
