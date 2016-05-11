@@ -208,7 +208,10 @@ func (v videoMapper) queueConsume(m consumer.Message) {
 		infoLogger.Printf("%v - Ignoring message with different Origin-System-Id %v", tid, m.Headers["Origin-System-Id"])
 		return
 	}
-	marshalledEvent, _ := v.httpConsume(m)
+	marshalledEvent, err := v.httpConsume(m)
+	if err != nil {
+		return
+	}
 	infoLogger.Printf("%v - Sending %v", tid, marshalledEvent)
 	//(*v.messageProducer).SendMessage(id, producer.Message{Headers: m.Headers, Body: string(cocoVideoS)})
 }
@@ -230,25 +233,50 @@ func (v videoMapper) mapMessage(m consumer.Message) ([]byte, error) {
 }
 
 func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, publishReference, lastModified string) ([]byte, error) {
-	uuid := brightcoveVideo["uuid"].(string)
-	contentUri := videoContentUriBase + uuid
-	if uuid == "" {
+	var uuidI interface{}
+	uuidI, ok := brightcoveVideo["uuid"]
+	if !ok {
 		return nil, errors.New(fmt.Sprintf("uuid field of native brightcove video JSON is null. Skipping message."))
 	}
-	id := brightcoveVideo["id"].(string)
-	if id == "" {
+	uuid, ok := uuidI.(string)
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("uuid field of native brightcove video JSON is not a string. Skipping message."))
+	}
+	contentUri := videoContentUriBase + uuid
+
+	idI, ok := brightcoveVideo["id"]
+	if !ok {
 		return nil, errors.New(fmt.Sprintf("id field of native brightcove video JSON is null. Skipping message."))
 	}
-	publishedDate := brightcoveVideo["updated_at"].(string)
-	if publishedDate == "" {
+	id, ok := idI.(string)
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("id field of native brightcove video JSON is not a string. Skipping message."))
+	}
+
+	publishedDateI, ok := brightcoveVideo["updated_at"]
+	if !ok {
 		return nil, errors.New(fmt.Sprintf("updated_at field of native brightcove video JSON is null. Skipping message."))
 	}
-	fileName := brightcoveVideo["name"].(string)
-	if fileName == "" {
-		warnLogger.Printf("filename field of native brightcove video JSON is null, type will be video/.")
+	publishedDate, ok := publishedDateI.(string)
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("updated_at field of native brightcove video JSON is not a string. Skipping message."))
+
 	}
-	extension := strings.TrimPrefix(filepath.Ext(fileName), ".")
-	mediaType := viodeMediaTypeBase + extension
+
+	mediaType := viodeMediaTypeBase
+	fileNameI, ok := brightcoveVideo["name"]
+	if !ok {
+		warnLogger.Printf("filename field of native brightcove video JSON is null, type will be video/.")
+	} else {
+		fileName, ok := fileNameI.(string)
+		if !ok {
+			warnLogger.Printf("filename field of native brightcove video JSON is not as string, type will be video/.")
+		} else {
+			extension := strings.TrimPrefix(filepath.Ext(fileName), ".")
+			mediaType = mediaType + extension
+		}
+	}
+
 	i := identifier{
 		Authority:       brigthcoveAuthority,
 		IdentifierValue: id,
