@@ -20,7 +20,7 @@ import (
 	"strings"
 )
 
-const videoContentUriBase = "http://video-mapper-iw-uk-p.svc.ft.com/video/model/"
+const videoContentUriBase = "http://brightcove-video-mapper-iw-uk-p.svc.ft.com/video/model/"
 const brigthcoveAuthority = "http://api.ft.com/system/BRIGHTCOVE"
 const viodeMediaTypeBase = "video/"
 const brightcoveOrigin = "http://cmdb.ft.com/systems/brightcove"
