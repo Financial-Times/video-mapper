@@ -199,6 +199,8 @@ func (v videoMapper) httpConsume(m consumer.Message) ([]byte, string, error) {
 		warnLogger.Printf("%v - Mapping error: [%v]", tid, err.Error())
 		return nil, "", err
 	}
+	infoLogger.Printf("%v - Http Mapped and sent for uuid: %v", tid, uuid)
+	(*v.messageProducer).SendMessage(uuid, producer.Message{Headers: m.Headers, Body: string(marshalledEvent)})
 	return marshalledEvent, uuid, nil
 }
 
