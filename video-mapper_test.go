@@ -8,6 +8,7 @@ import (
 func TestExtractUuid_NormalCase(t *testing.T) {
 	var tests = []struct {
 		message         consumer.Message
+		uuid            string
 		marshalledEvent string
 	}{
 		{
@@ -23,6 +24,7 @@ func TestExtractUuid_NormalCase(t *testing.T) {
                                    "updated_at": "2015-09-17T17:41:20.782Z"
 				}`,
 			},
+			"bad50c54-76d9-30e9-8734-b999c708aa4c",
 			`{` +
 				`"contentUri":"http://video-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
 				`"payload":"{\"uuid\":\"bad50c54-76d9-30e9-8734-b999c708aa4c\",\"identifiers\":[{\"authority\":\"http://api.ft.com/system/BRIGHTCOVE\",\"identifierValue\":\"4492075574001\"}],\"publishedDate\":\"2015-09-17T17:41:20.782Z\",\"mediaType\":\"video/mp4\",\"publishReference\":\"tid_123123\",\"lastModified\":\"2016-04-29T11:02:58.304Z\"}",` +
@@ -101,6 +103,7 @@ func TestExtractUuid_NormalCase(t *testing.T) {
 					  "updated_at": "2015-09-17T17:41:20.782Z"
 				}`,
 			},
+			"bad50c54-76d9-30e9-8734-b999c708aa4c",
 			`{` +
 				`"contentUri":"http://video-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
 				`"payload":"{\"uuid\":\"bad50c54-76d9-30e9-8734-b999c708aa4c\",\"identifiers\":[{\"authority\":\"http://api.ft.com/system/BRIGHTCOVE\",\"identifierValue\":\"4492075574001\"}],\"publishedDate\":\"2015-09-17T17:41:20.782Z\",\"mediaType\":\"video/mp4\",\"publishReference\":\"tid_123123\",\"lastModified\":\"2016-04-29T10:59:39.914Z\"}",` +
@@ -120,6 +123,7 @@ func TestExtractUuid_NormalCase(t *testing.T) {
                                    "updated_at": "2015-09-17T17:41:20.782Z"
 				}`,
 			},
+			"bad50c54-76d9-30e9-8734-b999c708aa4c",
 			`{` +
 				`"contentUri":"http://video-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
 				`"payload":"{\"uuid\":\"bad50c54-76d9-30e9-8734-b999c708aa4c\",\"identifiers\":[{\"authority\":\"http://api.ft.com/system/BRIGHTCOVE\",\"identifierValue\":\"4492075574001\"}],\"publishedDate\":\"2015-09-17T17:41:20.782Z\",\"mediaType\":\"video/\",\"publishReference\":\"tid_123123\",\"lastModified\":\"2016-04-29T11:02:58.304Z\"}",` +
@@ -129,7 +133,7 @@ func TestExtractUuid_NormalCase(t *testing.T) {
 	}
 	m := videoMapper{}
 	for _, test := range tests {
-		actualMarshalledEvent, err := m.mapMessage(test.message)
+		actualMarshalledEvent, actualUuid, err := m.mapMessage(test.message)
 		if err != nil {
 			t.Errorf("Error mapping message\n%v\n%v", test.message, err.Error())
 			continue
@@ -137,6 +141,9 @@ func TestExtractUuid_NormalCase(t *testing.T) {
 		actualMarshalledEventS := string(actualMarshalledEvent)
 		if actualMarshalledEventS != test.marshalledEvent {
 			t.Errorf("Error mapping message\n%v\nExpected: %s\nActual: %s\n", test.message, test.marshalledEvent, actualMarshalledEventS)
+		}
+		if actualUuid != test.uuid {
+			t.Errorf("Error retrieving uuid\n%v\nExpected: %s\nActual: %s\n", test.message, test.uuid, actualUuid)
 		}
 	}
 }

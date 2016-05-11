@@ -182,7 +182,7 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 			"Message-Timestamp": r.Header.Get("X-Message-Timestamp"),
 		},
 	}
-	mappedVideoBytes, err := v.httpConsume(m)
+	mappedVideoBytes, _, err := v.httpConsume(m)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
@@ -191,15 +191,15 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(mappedVideoBytes)
 }
 
-func (v videoMapper) httpConsume(m consumer.Message) ([]byte, error) {
+func (v videoMapper) httpConsume(m consumer.Message) ([]byte, string, error) {
 	tid := m.Headers["X-Request-Id"]
-	marshalledEvent, err := v.mapMessage(m)
+	marshalledEvent, uuid, err := v.mapMessage(m)
 
 	if err != nil {
 		warnLogger.Printf("%v - Mapping error: [%v]", tid, err.Error())
-		return nil, err
+		return nil, "", err
 	}
-	return marshalledEvent, nil
+	return marshalledEvent, uuid, nil
 }
 
 func (v videoMapper) queueConsume(m consumer.Message) {
@@ -208,58 +208,58 @@ func (v videoMapper) queueConsume(m consumer.Message) {
 		infoLogger.Printf("%v - Ignoring message with different Origin-System-Id %v", tid, m.Headers["Origin-System-Id"])
 		return
 	}
-	marshalledEvent, err := v.httpConsume(m)
+	marshalledEvent, uuid, err := v.httpConsume(m)
 	if err != nil {
 		return
 	}
-	infoLogger.Printf("%v - Sending %v", tid, marshalledEvent)
-	//(*v.messageProducer).SendMessage(id, producer.Message{Headers: m.Headers, Body: string(cocoVideoS)})
+	infoLogger.Printf("%v - Mapped and sent for uuid: %v", tid, uuid)
+	(*v.messageProducer).SendMessage(uuid, producer.Message{Headers: m.Headers, Body: string(marshalledEvent)})
 }
 
-func (v videoMapper) mapMessage(m consumer.Message) ([]byte, error) {
+func (v videoMapper) mapMessage(m consumer.Message) ([]byte, string, error) {
 	var brightcoveVideo map[string]interface{}
 	if err := json.Unmarshal([]byte(m.Body), &brightcoveVideo); err != nil {
-		return nil, errors.New(fmt.Sprintf("Video JSON from Brightcove couldn't be unmarshalled. Skipping invalid JSON: %v", m.Body))
+		return nil, "", errors.New(fmt.Sprintf("Video JSON from Brightcove couldn't be unmarshalled. Skipping invalid JSON: %v", m.Body))
 	}
 	publishReference := m.Headers["X-Request-Id"]
 	if publishReference == "" {
-		return nil, errors.New("X-Request-Id not found in kafka message headers. Skipping message.")
+		return nil, "", errors.New("X-Request-Id not found in kafka message headers. Skipping message.")
 	}
 	lastModified := m.Headers["Message-Timestamp"]
 	if lastModified == "" {
-		return nil, errors.New("Message-Timestamp not found in kafka message headers. Skipping message.")
+		return nil, "", errors.New("Message-Timestamp not found in kafka message headers. Skipping message.")
 	}
 	return v.mapBrightcoveVideo(brightcoveVideo, publishReference, lastModified)
 }
 
-func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, publishReference, lastModified string) ([]byte, error) {
+func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, publishReference, lastModified string) ([]byte, string, error) {
 	var uuidI interface{}
 	uuidI, ok := brightcoveVideo["uuid"]
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("uuid field of native brightcove video JSON is null. Skipping message."))
+		return nil, "", errors.New(fmt.Sprintf("uuid field of native brightcove video JSON is null. Skipping message."))
 	}
 	uuid, ok := uuidI.(string)
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("uuid field of native brightcove video JSON is not a string. Skipping message."))
+		return nil, "", errors.New(fmt.Sprintf("uuid field of native brightcove video JSON is not a string. Skipping message."))
 	}
 	contentUri := videoContentUriBase + uuid
 
 	idI, ok := brightcoveVideo["id"]
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("id field of native brightcove video JSON is null. Skipping message."))
+		return nil, "", errors.New(fmt.Sprintf("id field of native brightcove video JSON is null. Skipping message."))
 	}
 	id, ok := idI.(string)
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("id field of native brightcove video JSON is not a string. Skipping message."))
+		return nil, "", errors.New(fmt.Sprintf("id field of native brightcove video JSON is not a string. Skipping message."))
 	}
 
 	publishedDateI, ok := brightcoveVideo["updated_at"]
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("updated_at field of native brightcove video JSON is null. Skipping message."))
+		return nil, "", errors.New(fmt.Sprintf("updated_at field of native brightcove video JSON is null. Skipping message."))
 	}
 	publishedDate, ok := publishedDateI.(string)
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("updated_at field of native brightcove video JSON is not a string. Skipping message."))
+		return nil, "", errors.New(fmt.Sprintf("updated_at field of native brightcove video JSON is not a string. Skipping message."))
 
 	}
 
@@ -292,7 +292,7 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 	marshalledPayload, err := json.Marshal(p)
 	if err != nil {
 		warnLogger.Printf("Couldn't marshall payload %v, skipping message.", p)
-		return nil, err
+		return nil, "", err
 	}
 	//fmt.Println(strconv.Quote(ss))
 	e := publicationEvent{
@@ -303,7 +303,7 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 	marshalledEvent, err := json.Marshal(e)
 	if err != nil {
 		warnLogger.Printf("Couldn't marshall event %v, skipping message.", e)
-		return nil, err
+		return nil, "", err
 	}
-	return marshalledEvent, nil
+	return marshalledEvent, uuid, nil
 }
