@@ -20,7 +20,6 @@ import (
 	"strings"
 )
 
-const tidValidRegexp = "(tid|SYNTHETIC-REQ-MON)[a-zA-Z0-9_-]*$"
 const videoContentUriBase = "http://video-mapper-iw-uk-p.svc.ft.com/video/model/"
 const brigthcoveAuthority = "http://api.ft.com/system/BRIGHTCOVE"
 const viodeMediaTypeBase = "video/"
@@ -172,8 +171,8 @@ func (v videoMapper) consumeUntilSigterm() {
 func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.Write([]byte(err.Error()))
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
 		return
 	}
 	m := consumer.Message{
@@ -185,8 +184,9 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	mappedVideoBytes, err := v.httpConsume(m)
 	if err != nil {
-		w.Write([]byte(err.Error()))
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
 	}
 	w.Write(mappedVideoBytes)
 }
