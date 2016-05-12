@@ -178,6 +178,10 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 		Headers: map[string]string{
 			"X-Request-Id":      r.Header.Get("X-Request-Id"),
 			"Message-Timestamp": r.Header.Get("X-Message-Timestamp"),
+			"Message-Id": "f03d84da-c400-4165-87dc-9b026fbeaa6d",
+			"Message-Type": "cms-content-published",
+			"Content-Type": "application/json",
+			"Origin-System-Id": "http://cmdb.ft.com/systems/brightcove",
 		},
 	}
 	mappedVideoBytes, _, err := v.httpConsume(m, true)
