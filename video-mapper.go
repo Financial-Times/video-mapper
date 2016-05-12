@@ -200,9 +200,10 @@ func (v videoMapper) httpConsume(m consumer.Message, toSend bool) ([]byte, strin
 		err = (*v.messageProducer).SendMessage("", producer.Message{Headers: m.Headers, Body: string(marshalledEvent)})
 		if err != nil {
 			warnLogger.Printf("%v - Error sending transformed message to queue: %v", tid, err)
+			return nil, uuid, err
 		}
 		infoLogger.Printf("%v - Http Mapped and sent for uuid: %v", tid, uuid)
-		return nil, uuid, err
+		return marshalledEvent, uuid, nil
 	}
 	return marshalledEvent, uuid, nil
 }
