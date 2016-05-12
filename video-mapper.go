@@ -194,15 +194,16 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 func (v videoMapper) httpConsume(m consumer.Message, toSend bool) ([]byte, string, error) {
 	tid := m.Headers["X-Request-Id"]
 	marshalledEvent, uuid, err := v.mapMessage(m)
-
 	if err != nil {
 		warnLogger.Printf("%v - Mapping error: [%v]", tid, err.Error())
 		return nil, "", err
 	}
-	infoLogger.Printf("%v - Http Mapped and sent for uuid: %v", tid, uuid)
-	err = (*v.messageProducer).SendMessage(uuid, producer.Message{Headers: m.Headers, Body: string(marshalledEvent)})
-	if err != nil {
-		warnLogger.Printf("%v - Error sending transformed message to queue: %v", tid, err)
+	if (toSend) {
+		err = (*v.messageProducer).SendMessage(uuid, producer.Message{Headers: m.Headers, Body: string(marshalledEvent)})
+		if err != nil {
+			warnLogger.Printf("%v - Error sending transformed message to queue: %v", tid, err)
+		}
+		infoLogger.Printf("%v - Http Mapped and sent for uuid: %v", tid, uuid)
 	}
 	return marshalledEvent, uuid, nil
 }
@@ -217,11 +218,11 @@ func (v videoMapper) queueConsume(m consumer.Message) {
 	if err != nil {
 		return
 	}
-	infoLogger.Printf("%v - Mapped and sent for uuid: %v", tid, uuid)
 	err = (*v.messageProducer).SendMessage(uuid, producer.Message{Headers: m.Headers, Body: string(marshalledEvent)})
 	if err != nil {
 		warnLogger.Printf("%v - Error sending transformed message to queue: %v", tid, err)
 	}
+	infoLogger.Printf("%v - Mapped and sent for uuid: %v", tid, uuid)
 }
 
 func (v videoMapper) mapMessage(m consumer.Message) ([]byte, string, error) {
