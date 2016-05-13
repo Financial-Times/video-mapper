@@ -201,11 +201,11 @@ func (v videoMapper) httpConsume(m consumer.Message, toSend bool) ([]byte, strin
 		return nil, "", err
 	}
 	if (toSend) {
-		err = (*v.messageProducer).SendMessage("", producer.Message{Headers: m.Headers, Body: string(marshalledEvent)})
-		if err != nil {
-			warnLogger.Printf("%v - Error sending transformed message to queue: %v", tid, err)
-			return nil, uuid, err
-		}
+		//err = (*v.messageProducer).SendMessage("", producer.Message{Headers: m.Headers, Body: string(marshalledEvent)})
+		//if err != nil {
+		//	warnLogger.Printf("%v - Error sending transformed message to queue: %v", tid, err)
+		//	return nil, uuid, err
+		//}
 		infoLogger.Printf("%v - Http Mapped and sent for uuid: %v", tid, uuid)
 		return marshalledEvent, uuid, nil
 	}
@@ -220,12 +220,14 @@ func (v videoMapper) queueConsume(m consumer.Message) {
 	}
 	marshalledEvent, uuid, err := v.httpConsume(m, false)
 	if err != nil {
+		warnLogger.Printf("%v - Error error consuming message: %v", tid, err)
 		return
 	}
-	err = (*v.messageProducer).SendMessage("", producer.Message{Headers: m.Headers, Body: string(marshalledEvent)})
-	if err != nil {
-		warnLogger.Printf("%v - Error sending transformed message to queue: %v", tid, err)
-	}
+	marshalledEvent
+	//err = (*v.messageProducer).SendMessage("", producer.Message{Headers: m.Headers, Body: string(marshalledEvent)})
+	//if err != nil {
+	//	warnLogger.Printf("%v - Error sending transformed message to queue: %v", tid, err)
+	//}
 	infoLogger.Printf("%v - Mapped and sent for uuid: %v", tid, uuid)
 }
 
