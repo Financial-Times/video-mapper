@@ -224,10 +224,10 @@ func (v videoMapper) queueConsume(m consumer.Message) {
 		return
 	}
 	infoLogger.Printf("%v", len(marshalledEvent));
-	//err = (*v.messageProducer).SendMessage("", producer.Message{Headers: m.Headers, Body: string(marshalledEvent)})
-	//if err != nil {
-	//	warnLogger.Printf("%v - Error sending transformed message to queue: %v", tid, err)
-	//}
+	err = (*v.messageProducer).SendMessage("", producer.Message{Headers: m.Headers, Body: string(marshalledEvent)})
+	if err != nil {
+		warnLogger.Printf("%v - Error sending transformed message to queue: %v", tid, err)
+	}
 	infoLogger.Printf("%v - Mapped and sent for uuid: %v", tid, uuid)
 }
 
