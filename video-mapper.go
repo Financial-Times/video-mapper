@@ -185,7 +185,7 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 			"Origin-System-Id": "http://cmdb.ft.com/systems/brightcove",
 		},
 	}
-	mappedVideoBytes, _, err := v.httpConsume(m, true)
+	mappedVideoBytes, _, err := v.httpConsume(m)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
@@ -194,21 +194,12 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(mappedVideoBytes)
 }
 
-func (v videoMapper) httpConsume(m consumer.Message, toSend bool) ([]byte, string, error) {
+func (v videoMapper) httpConsume(m consumer.Message) ([]byte, string, error) {
 	tid := m.Headers["X-Request-Id"]
 	marshalledEvent, uuid, err := v.mapMessage(m)
 	if err != nil {
 		warnLogger.Printf("%v - Mapping error: [%v]", tid, err.Error())
 		return nil, "", err
-	}
-	if (toSend) {
-		//err = (*v.messageProducer).SendMessage("", producer.Message{Headers: m.Headers, Body: string(marshalledEvent)})
-		//if err != nil {
-		//	warnLogger.Printf("%v - Error sending transformed message to queue: %v", tid, err)
-		//	return nil, uuid, err
-		//}
-		infoLogger.Printf("%v - Http Mapped and sent for uuid: %v", tid, uuid)
-		return marshalledEvent, uuid, nil
 	}
 	return marshalledEvent, uuid, nil
 }
@@ -219,12 +210,11 @@ func (v videoMapper) queueConsume(m consumer.Message) {
 		infoLogger.Printf("%v - Ignoring message with different Origin-System-Id %v", tid, m.Headers["Origin-System-Id"])
 		return
 	}
-	marshalledEvent, uuid, err := v.httpConsume(m, false)
+	marshalledEvent, uuid, err := v.httpConsume(m)
 	if err != nil {
 		warnLogger.Printf("%v - Error error consuming message: %v", tid, err)
 		return
 	}
-	infoLogger.Printf("%v", len(marshalledEvent));
 	err = (*v.messageProducer).SendMessage("", producer.Message{Headers: m.Headers, Body: string(marshalledEvent)})
 	if err != nil {
 		warnLogger.Printf("%v - Error sending transformed message to queue: %v", tid, err)
