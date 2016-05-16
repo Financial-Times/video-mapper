@@ -124,8 +124,9 @@ func main() {
 		}
 		messageProducer := producer.NewMessageProducer(producerConfig)
 		var v videoMapper
+		v = videoMapper{nil, &messageProducer}
 		messageConsumer := consumer.NewConsumer(consumerConfig, v.queueConsume, http.Client{})
-		v = videoMapper{&messageConsumer, &messageProducer}
+		v.messageConsumer = messageConsumer
 		hc := &healthcheck{client: http.Client{}, consumerConf: consumerConfig}
 		go v.listen(hc)
 		v.consumeUntilSigterm()
