@@ -179,10 +179,11 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
+	tid := r.Header.Get("X-Request-Id")
 	m := consumer.Message{
 		Body: string(body),
 		Headers: map[string]string{
-			"X-Request-Id":      r.Header.Get("X-Request-Id"),
+			"X-Request-Id":      tid,
 			"Message-Timestamp": r.Header.Get("X-Message-Timestamp"),
 			"Message-Id":        "f03d84da-c400-4165-87dc-9b026fbeaa6d",
 			"Message-Type":      "cms-content-published",
@@ -196,7 +197,10 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
-	w.Write(mappedVideoBytes)
+	_, err = w.Write(mappedVideoBytes)
+	if err != nil {
+		warnLogger.Printf("%v - Writing response error: [%v]", tid, err)
+	}
 }
 
 func (v videoMapper) httpConsume(m consumer.Message) ([]byte, string, error) {
