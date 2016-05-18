@@ -20,13 +20,13 @@ import (
 	"strings"
 )
 
-const videoContentUriBase = "http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/"
+const videoContentURIBase = "http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/"
 const brigthcoveAuthority = "http://api.ft.com/system/BRIGHTCOVE"
-const viodeMediaTypeBase = "video/"
+const videoMediaTypeBase = "video/"
 const brightcoveOrigin = "http://cmdb.ft.com/systems/brightcove"
 
 type publicationEvent struct {
-	ContentUri   string `json:"contentUri"`
+	ContentURI   string `json:"contentUri"`
 	Payload      string `json:"payload"`
 	LastModified string `json:"lastModified"`
 }
@@ -253,7 +253,7 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 	if !ok {
 		return nil, "", errors.New(fmt.Sprintf("uuid field of native brightcove video JSON is not a string. Skipping message."))
 	}
-	contentUri := videoContentUriBase + uuid
+	contentURI := videoContentURIBase + uuid
 
 	idI, ok := brightcoveVideo["id"]
 	if !ok {
@@ -274,7 +274,7 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 
 	}
 
-	mediaType := viodeMediaTypeBase
+	mediaType := videoMediaTypeBase
 	fileNameI, ok := brightcoveVideo["name"]
 	if !ok {
 		warnLogger.Printf("filename field of native brightcove video JSON is null, type will be video/.")
@@ -307,7 +307,7 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 	}
 	//fmt.Println(strconv.Quote(ss))
 	e := publicationEvent{
-		ContentUri:   contentUri,
+		ContentURI:   contentURI,
 		Payload:      string(marshalledPayload),
 		LastModified: lastModified,
 	}

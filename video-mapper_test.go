@@ -133,7 +133,7 @@ func TestExtractUuid_NormalCase(t *testing.T) {
 	}
 	m := videoMapper{}
 	for _, test := range tests {
-		actualMarshalledEvent, actualUuid, err := m.mapMessage(test.message)
+		actualMarshalledEvent, actualUUID, err := m.mapMessage(test.message)
 		if err != nil {
 			t.Errorf("Error mapping message\n%v\n%v", test.message, err.Error())
 			continue
@@ -142,8 +142,8 @@ func TestExtractUuid_NormalCase(t *testing.T) {
 		if actualMarshalledEventS != test.marshalledEvent {
 			t.Errorf("Error mapping message\n%v\nExpected: %s\nActual: %s\n", test.message, test.marshalledEvent, actualMarshalledEventS)
 		}
-		if actualUuid != test.uuid {
-			t.Errorf("Error retrieving uuid\n%v\nExpected: %s\nActual: %s\n", test.message, test.uuid, actualUuid)
+		if actualUUID != test.uuid {
+			t.Errorf("Error retrieving uuid\n%v\nExpected: %s\nActual: %s\n", test.message, test.uuid, actualUUID)
 		}
 	}
 }
