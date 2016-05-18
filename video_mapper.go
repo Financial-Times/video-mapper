@@ -236,34 +236,20 @@ func (v videoMapper) mapMessage(m consumer.Message) ([]byte, string, error) {
 }
 
 func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, publishReference, lastModified string) ([]byte, string, error) {
-	var uuidI interface{}
-	uuidI, ok := brightcoveVideo["uuid"]
-	if !ok {
-		return nil, "", errors.New("uuid field of native brightcove video JSON is null. Skipping message")
-	}
-	uuid, ok := uuidI.(string)
-	if !ok {
-		return nil, "", errors.New("uuid field of native brightcove video JSON is not a string. Skipping message")
+	uuid, err := get("uuid", brightcoveVideo)
+	if err != nil {
+		return nil, "", err
 	}
 	contentURI := videoContentURIBase + uuid
 
-	idI, ok := brightcoveVideo["id"]
-	if !ok {
-		return nil, "", errors.New("id field of native brightcove video JSON is null. Skipping message")
-	}
-	id, ok := idI.(string)
-	if !ok {
-		return nil, "", errors.New("id field of native brightcove video JSON is not a string. Skipping message")
+	id, err := get("id", brightcoveVideo)
+	if err != nil {
+		return nil, "", err
 	}
 
-	publishedDateI, ok := brightcoveVideo["updated_at"]
-	if !ok {
-		return nil, "", errors.New("updated_at field of native brightcove video JSON is null. Skipping message")
-	}
-	publishedDate, ok := publishedDateI.(string)
-	if !ok {
-		return nil, "", errors.New("updated_at field of native brightcove video JSON is not a string. Skipping message")
-
+	publishedDate, err := get("updated_at", brightcoveVideo)
+	if err != nil {
+		return nil, "", err
 	}
 
 	mediaType := videoMediaTypeBase
@@ -309,6 +295,18 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 		return nil, "", err
 	}
 	return marshalledEvent, uuid, nil
+}
+
+func get(key string, brightcoveVideo map[string]interface{}) (val string, err error) {
+	valueI, ok := brightcoveVideo[key]
+	if !ok {
+		return "", fmt.Errorf("%s field of native brightcove video JSON is null. Skipping message", key)
+	}
+	val, ok = valueI.(string)
+	if !ok {
+		return "", fmt.Errorf("%s field of native brightcove video JSON is not a string. Skipping message", key)
+	}
+	return val, nil
 }
 
 func prettyPrintConfig(c consumer.QueueConfig, p producer.MessageProducerConfig) string {
