@@ -126,7 +126,7 @@ func main() {
 			Queue:         *writeQueue,
 			Authorization: *authorization,
 		}
-		infoLogger.Printf("[%s]", prettyPrintVideoMapper(consumerConfig, producerConfig))
+		infoLogger.Println(prettyPrintConfig(consumerConfig, producerConfig))
 		messageProducer := producer.NewMessageProducer(producerConfig)
 		var v videoMapper
 		v = videoMapper{nil, &messageProducer}
@@ -140,18 +140,6 @@ func main() {
 	if err != nil {
 		println(err)
 	}
-}
-
-func prettyPrintVideoMapper(c consumer.QueueConfig, p producer.MessageProducerConfig) string {
-	return fmt.Sprintf("videoMapper: [\n\t%s\n\t%s\n]", prettyPrintConsumerConfig(c), prettyPrintProducerConfig(p))
-}
-
-func prettyPrintConsumerConfig(c consumer.QueueConfig) string {
-	return fmt.Sprintf("consumerConfig: [\n\t\taddr: [%v]\n\t\tgroup: [%v]\n\t\ttopic: [%v]\n\t\treadQueueHeader: [%v]\n\t]", c.Addrs, c.Group, c.Topic, c.Queue)
-}
-
-func prettyPrintProducerConfig(p producer.MessageProducerConfig) string {
-	return fmt.Sprintf("producerConfig: [\n\t\taddr: [%v]\n\t\ttopic: [%v]\n\t\twriteQueueHeader: [%v]\n\t]", p.Addr, p.Topic, p.Queue)
 }
 
 func (v videoMapper) listen(hc *healthcheck) {
@@ -329,4 +317,16 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 		return nil, "", err
 	}
 	return marshalledEvent, uuid, nil
+}
+
+func prettyPrintConfig(c consumer.QueueConfig, p producer.MessageProducerConfig) string {
+	return fmt.Sprintf("Config: [\n\t%s\n\t%s\n]", prettyPrintConsumerConfig(c), prettyPrintProducerConfig(p))
+}
+
+func prettyPrintConsumerConfig(c consumer.QueueConfig) string {
+	return fmt.Sprintf("consumerConfig: [\n\t\taddr: [%v]\n\t\tgroup: [%v]\n\t\ttopic: [%v]\n\t\treadQueueHeader: [%v]\n\t]", c.Addrs, c.Group, c.Topic, c.Queue)
+}
+
+func prettyPrintProducerConfig(p producer.MessageProducerConfig) string {
+	return fmt.Sprintf("producerConfig: [\n\t\taddr: [%v]\n\t\ttopic: [%v]\n\t\twriteQueueHeader: [%v]\n\t]", p.Addr, p.Topic, p.Queue)
 }
