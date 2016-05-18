@@ -122,6 +122,7 @@ func main() {
 			Queue:         *writeQueue,
 			Authorization: *authorization,
 		}
+		infoLogger.Printf("[%s]", prettyPrintVideoMapper(consumerConfig, producerConfig))
 		messageProducer := producer.NewMessageProducer(producerConfig)
 		var v videoMapper
 		v = videoMapper{nil, &messageProducer}
@@ -135,6 +136,18 @@ func main() {
 	if err != nil {
 		println(err)
 	}
+}
+
+func prettyPrintVideoMapper(c consumer.QueueConfig, p producer.MessageProducerConfig) string {
+	return fmt.Sprintf("videoMapper: [\n\t%s\n\t%s\n]", prettyPrintConsumerConfig(c), prettyPrintProducerConfig(p))
+}
+
+func prettyPrintConsumerConfig(c consumer.QueueConfig) string {
+	return fmt.Sprintf("consumerConfig: [\n\t\taddr: [%v]\n\t\tgroup: [%v]\n\t\ttopic: [%v]\n\t\treadQueueHeader: [%v]\n\t]", c.Addrs, c.Group, c.Topic, c.Queue)
+}
+
+func prettyPrintProducerConfig(p producer.MessageProducerConfig) string {
+	return fmt.Sprintf("producerConfig: [\n\t\taddr: [%v]\n\t\ttopic: [%v]\n\t\twriteQueueHeader: [%v]\n\t]", p.Addr, p.Topic, p.Queue)
 }
 
 func (v videoMapper) listen(hc *healthcheck) {
@@ -179,10 +192,10 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 		Headers: map[string]string{
 			"X-Request-Id":      r.Header.Get("X-Request-Id"),
 			"Message-Timestamp": r.Header.Get("X-Message-Timestamp"),
-			"Message-Id": "f03d84da-c400-4165-87dc-9b026fbeaa6d",
-			"Message-Type": "cms-content-published",
-			"Content-Type": "application/json",
-			"Origin-System-Id": "http://cmdb.ft.com/systems/brightcove",
+			"Message-Id":        "f03d84da-c400-4165-87dc-9b026fbeaa6d",
+			"Message-Type":      "cms-content-published",
+			"Content-Type":      "application/json",
+			"Origin-System-Id":  "http://cmdb.ft.com/systems/brightcove",
 		},
 	}
 	mappedVideoBytes, _, err := v.httpConsume(m)
