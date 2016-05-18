@@ -106,6 +106,7 @@ func main() {
 			Topic:                *readTopic,
 			Queue:                *readQueue,
 			ConcurrentProcessing: false,
+			AutoCommitEnable:     true,
 			AuthorizationKey:     *authorization,
 		}
 		producerConfig := producer.MessageProducerConfig{
