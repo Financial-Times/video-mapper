@@ -230,15 +230,15 @@ func (v videoMapper) queueConsume(m consumer.Message) {
 func (v videoMapper) mapMessage(m consumer.Message) ([]byte, string, error) {
 	var brightcoveVideo map[string]interface{}
 	if err := json.Unmarshal([]byte(m.Body), &brightcoveVideo); err != nil {
-		return nil, "", errors.New(fmt.Sprintf("Video JSON from Brightcove couldn't be unmarshalled. Skipping invalid JSON: %v", m.Body))
+		return nil, "", fmt.Errorf("Video JSON from Brightcove couldn't be unmarshalled. Skipping invalid JSON: %v", m.Body)
 	}
 	publishReference := m.Headers["X-Request-Id"]
 	if publishReference == "" {
-		return nil, "", errors.New("X-Request-Id not found in kafka message headers. Skipping message.")
+		return nil, "", errors.New("X-Request-Id not found in kafka message headers. Skipping message")
 	}
 	lastModified := m.Headers["Message-Timestamp"]
 	if lastModified == "" {
-		return nil, "", errors.New("Message-Timestamp not found in kafka message headers. Skipping message.")
+		return nil, "", errors.New("Message-Timestamp not found in kafka message headers. Skipping message")
 	}
 	return v.mapBrightcoveVideo(brightcoveVideo, publishReference, lastModified)
 }
@@ -247,30 +247,30 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 	var uuidI interface{}
 	uuidI, ok := brightcoveVideo["uuid"]
 	if !ok {
-		return nil, "", errors.New(fmt.Sprintf("uuid field of native brightcove video JSON is null. Skipping message."))
+		return nil, "", errors.New("uuid field of native brightcove video JSON is null. Skipping message")
 	}
 	uuid, ok := uuidI.(string)
 	if !ok {
-		return nil, "", errors.New(fmt.Sprintf("uuid field of native brightcove video JSON is not a string. Skipping message."))
+		return nil, "", errors.New("uuid field of native brightcove video JSON is not a string. Skipping message")
 	}
 	contentURI := videoContentURIBase + uuid
 
 	idI, ok := brightcoveVideo["id"]
 	if !ok {
-		return nil, "", errors.New(fmt.Sprintf("id field of native brightcove video JSON is null. Skipping message."))
+		return nil, "", errors.New("id field of native brightcove video JSON is null. Skipping message")
 	}
 	id, ok := idI.(string)
 	if !ok {
-		return nil, "", errors.New(fmt.Sprintf("id field of native brightcove video JSON is not a string. Skipping message."))
+		return nil, "", errors.New("id field of native brightcove video JSON is not a string. Skipping message")
 	}
 
 	publishedDateI, ok := brightcoveVideo["updated_at"]
 	if !ok {
-		return nil, "", errors.New(fmt.Sprintf("updated_at field of native brightcove video JSON is null. Skipping message."))
+		return nil, "", errors.New("updated_at field of native brightcove video JSON is null. Skipping message")
 	}
 	publishedDate, ok := publishedDateI.(string)
 	if !ok {
-		return nil, "", errors.New(fmt.Sprintf("updated_at field of native brightcove video JSON is not a string. Skipping message."))
+		return nil, "", errors.New("updated_at field of native brightcove video JSON is not a string. Skipping message")
 
 	}
 
