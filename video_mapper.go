@@ -26,9 +26,9 @@ const videoMediaTypeBase = "video/"
 const brightcoveOrigin = "http://cmdb.ft.com/systems/brightcove"
 
 type publicationEvent struct {
-	ContentURI   string `json:"contentUri"`
-	Payload      string `json:"payload"`
-	LastModified string `json:"lastModified"`
+	ContentURI   string  `json:"contentUri"`
+	Payload      payload `json:"payload"`
+	LastModified string  `json:"lastModified"`
 }
 
 type identifier struct {
@@ -273,15 +273,9 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 		PublishReference: publishReference,
 		LastModified:     lastModified,
 	}
-	marshalledPayload, err := json.Marshal(p)
-	if err != nil {
-		warnLogger.Printf("Couldn't marshall payload %v, skipping message.", p)
-		return nil, "", err
-	}
-	//fmt.Println(strconv.Quote(ss))
 	e := publicationEvent{
 		ContentURI:   contentURI,
-		Payload:      string(marshalledPayload),
+		Payload:      p,
 		LastModified: lastModified,
 	}
 	marshalledEvent, err := json.Marshal(e)
