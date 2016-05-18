@@ -191,9 +191,9 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (v videoMapper) httpConsume(m consumer.Message) ([]byte, string, error) {
+func (v videoMapper) httpConsume(m consumer.Message) (marshalledEvent []byte, uuid string, err error) {
 	tid := m.Headers["X-Request-Id"]
-	marshalledEvent, uuid, err := v.mapMessage(m)
+	marshalledEvent, uuid, err = v.mapMessage(m)
 	if err != nil {
 		warnLogger.Printf("%v - Mapping error: [%v]", tid, err.Error())
 		return nil, "", err
@@ -219,7 +219,7 @@ func (v videoMapper) queueConsume(m consumer.Message) {
 	infoLogger.Printf("%v - Mapped and sent for uuid: %v", tid, uuid)
 }
 
-func (v videoMapper) mapMessage(m consumer.Message) ([]byte, string, error) {
+func (v videoMapper) mapMessage(m consumer.Message) (marshalledPubEvent []byte, uuid string, err error) {
 	var brightcoveVideo map[string]interface{}
 	if err := json.Unmarshal([]byte(m.Body), &brightcoveVideo); err != nil {
 		return nil, "", fmt.Errorf("Video JSON from Brightcove couldn't be unmarshalled. Skipping invalid JSON: %v", m.Body)
@@ -235,8 +235,8 @@ func (v videoMapper) mapMessage(m consumer.Message) ([]byte, string, error) {
 	return v.mapBrightcoveVideo(brightcoveVideo, publishReference, lastModified)
 }
 
-func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, publishReference, lastModified string) ([]byte, string, error) {
-	uuid, err := get("uuid", brightcoveVideo)
+func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, publishReference, lastModified string) (marshalledPubEvent []byte, uuid string, err error) {
+	uuid, err = get("uuid", brightcoveVideo)
 	if err != nil {
 		return nil, "", err
 	}
