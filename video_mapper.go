@@ -50,18 +50,6 @@ type videoMapper struct {
 	messageProducer *producer.MessageProducer
 }
 
-type errorString struct {
-	s string
-}
-
-func (e *errorString) Error() string {
-	return e.s
-}
-
-func New(text string) error {
-	return &errorString{text}
-}
-
 func main() {
 	app := cli.App("video-mapper", "Catch native video content transform into Content and send back to queue.")
 	addresses := app.Strings(cli.StringsOpt{
