@@ -179,7 +179,7 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 			"Origin-System-Id":  "http://cmdb.ft.com/systems/brightcove",
 		},
 	}
-	mappedVideoBytes, _, err := v.httpConsume(m)
+	mappedVideoBytes, _, err := v.transformMsg(m)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
@@ -191,7 +191,7 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (v videoMapper) httpConsume(m consumer.Message) (marshalledEvent []byte, uuid string, err error) {
+func (v videoMapper) transformMsg(m consumer.Message) (marshalledEvent []byte, uuid string, err error) {
 	tid := m.Headers["X-Request-Id"]
 	marshalledEvent, uuid, err = v.mapMessage(m)
 	if err != nil {
@@ -207,7 +207,7 @@ func (v videoMapper) queueConsume(m consumer.Message) {
 		infoLogger.Printf("%v - Ignoring message with different Origin-System-Id %v", tid, m.Headers["Origin-System-Id"])
 		return
 	}
-	marshalledEvent, uuid, err := v.httpConsume(m)
+	marshalledEvent, uuid, err := v.transformMsg(m)
 	if err != nil {
 		warnLogger.Printf("%v - Error error consuming message: %v", tid, err)
 		return
