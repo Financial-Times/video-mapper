@@ -20,13 +20,13 @@ import (
 	"strings"
 )
 
-const videoContentUriBase = "http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/"
+const videoContentURIBase = "http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/"
 const brigthcoveAuthority = "http://api.ft.com/system/BRIGHTCOVE"
-const viodeMediaTypeBase = "video/"
+const videoMediaTypeBase = "video/"
 const brightcoveOrigin = "http://cmdb.ft.com/systems/brightcove"
 
 type publicationEvent struct {
-	ContentUri   string `json:"contentUri"`
+	ContentURI   string `json:"contentUri"`
 	Payload      string `json:"payload"`
 	LastModified string `json:"lastModified"`
 }
@@ -50,23 +50,11 @@ type videoMapper struct {
 	messageProducer *producer.MessageProducer
 }
 
-type errorString struct {
-	s string
-}
-
-func (e *errorString) Error() string {
-	return e.s
-}
-
-func New(text string) error {
-	return &errorString{text}
-}
-
 func main() {
 	app := cli.App("video-mapper", "Catch native video content transform into Content and send back to queue.")
 	addresses := app.Strings(cli.StringsOpt{
 		Name:   "queue-addresses",
-		Value:  []string{"http://localhost:9090"},
+		Value:  nil,
 		Desc:   "Addresses to connect to the queue (hostnames).",
 		EnvVar: "Q_ADDR",
 	})
@@ -108,12 +96,17 @@ func main() {
 	})
 	app.Action = func() {
 		initLogs(os.Stdout, os.Stdout, os.Stderr)
+		if len(*addresses) == 0 {
+			errorLogger.Println("No queue address provided. Quitting...")
+			cli.Exit(1)
+		}
 		consumerConfig := consumer.QueueConfig{
 			Addrs:                *addresses,
 			Group:                *group,
 			Topic:                *readTopic,
 			Queue:                *readQueue,
 			ConcurrentProcessing: false,
+			AutoCommitEnable:     true,
 			AuthorizationKey:     *authorization,
 		}
 		producerConfig := producer.MessageProducerConfig{
@@ -122,6 +115,7 @@ func main() {
 			Queue:         *writeQueue,
 			Authorization: *authorization,
 		}
+		infoLogger.Println(prettyPrintConfig(consumerConfig, producerConfig))
 		messageProducer := producer.NewMessageProducer(producerConfig)
 		var v videoMapper
 		v = videoMapper{nil, &messageProducer}
@@ -174,29 +168,33 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
+	tid := r.Header.Get("X-Request-Id")
 	m := consumer.Message{
 		Body: string(body),
 		Headers: map[string]string{
-			"X-Request-Id":      r.Header.Get("X-Request-Id"),
+			"X-Request-Id":      tid,
 			"Message-Timestamp": r.Header.Get("X-Message-Timestamp"),
-			"Message-Id": "f03d84da-c400-4165-87dc-9b026fbeaa6d",
-			"Message-Type": "cms-content-published",
-			"Content-Type": "application/json",
-			"Origin-System-Id": "http://cmdb.ft.com/systems/brightcove",
+			"Message-Id":        "f03d84da-c400-4165-87dc-9b026fbeaa6d",
+			"Message-Type":      "cms-content-published",
+			"Content-Type":      "application/json",
+			"Origin-System-Id":  "http://cmdb.ft.com/systems/brightcove",
 		},
 	}
-	mappedVideoBytes, _, err := v.httpConsume(m)
+	mappedVideoBytes, _, err := v.transformMsg(m)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
 		return
 	}
-	w.Write(mappedVideoBytes)
+	_, err = w.Write(mappedVideoBytes)
+	if err != nil {
+		warnLogger.Printf("%v - Writing response error: [%v]", tid, err)
+	}
 }
 
-func (v videoMapper) httpConsume(m consumer.Message) ([]byte, string, error) {
+func (v videoMapper) transformMsg(m consumer.Message) (marshalledEvent []byte, uuid string, err error) {
 	tid := m.Headers["X-Request-Id"]
-	marshalledEvent, uuid, err := v.mapMessage(m)
+	marshalledEvent, uuid, err = v.mapMessage(m)
 	if err != nil {
 		warnLogger.Printf("%v - Mapping error: [%v]", tid, err.Error())
 		return nil, "", err
@@ -210,7 +208,7 @@ func (v videoMapper) queueConsume(m consumer.Message) {
 		infoLogger.Printf("%v - Ignoring message with different Origin-System-Id %v", tid, m.Headers["Origin-System-Id"])
 		return
 	}
-	marshalledEvent, uuid, err := v.httpConsume(m)
+	marshalledEvent, uuid, err := v.transformMsg(m)
 	if err != nil {
 		warnLogger.Printf("%v - Error error consuming message: %v", tid, err)
 		return
@@ -222,67 +220,47 @@ func (v videoMapper) queueConsume(m consumer.Message) {
 	infoLogger.Printf("%v - Mapped and sent for uuid: %v", tid, uuid)
 }
 
-func (v videoMapper) mapMessage(m consumer.Message) ([]byte, string, error) {
+func (v videoMapper) mapMessage(m consumer.Message) (marshalledPubEvent []byte, uuid string, err error) {
 	var brightcoveVideo map[string]interface{}
 	if err := json.Unmarshal([]byte(m.Body), &brightcoveVideo); err != nil {
-		return nil, "", errors.New(fmt.Sprintf("Video JSON from Brightcove couldn't be unmarshalled. Skipping invalid JSON: %v", m.Body))
+		return nil, "", fmt.Errorf("Video JSON from Brightcove couldn't be unmarshalled. Skipping invalid JSON: %v", m.Body)
 	}
 	publishReference := m.Headers["X-Request-Id"]
 	if publishReference == "" {
-		return nil, "", errors.New("X-Request-Id not found in kafka message headers. Skipping message.")
+		return nil, "", errors.New("X-Request-Id not found in kafka message headers. Skipping message")
 	}
 	lastModified := m.Headers["Message-Timestamp"]
 	if lastModified == "" {
-		return nil, "", errors.New("Message-Timestamp not found in kafka message headers. Skipping message.")
+		return nil, "", errors.New("Message-Timestamp not found in kafka message headers. Skipping message")
 	}
 	return v.mapBrightcoveVideo(brightcoveVideo, publishReference, lastModified)
 }
 
-func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, publishReference, lastModified string) ([]byte, string, error) {
-	var uuidI interface{}
-	uuidI, ok := brightcoveVideo["uuid"]
-	if !ok {
-		return nil, "", errors.New(fmt.Sprintf("uuid field of native brightcove video JSON is null. Skipping message."))
+func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, publishReference, lastModified string) (marshalledPubEvent []byte, uuid string, err error) {
+	uuid, err = get("uuid", brightcoveVideo)
+	if err != nil {
+		return nil, "", err
 	}
-	uuid, ok := uuidI.(string)
-	if !ok {
-		return nil, "", errors.New(fmt.Sprintf("uuid field of native brightcove video JSON is not a string. Skipping message."))
-	}
-	contentUri := videoContentUriBase + uuid
+	contentURI := videoContentURIBase + uuid
 
-	idI, ok := brightcoveVideo["id"]
-	if !ok {
-		return nil, "", errors.New(fmt.Sprintf("id field of native brightcove video JSON is null. Skipping message."))
-	}
-	id, ok := idI.(string)
-	if !ok {
-		return nil, "", errors.New(fmt.Sprintf("id field of native brightcove video JSON is not a string. Skipping message."))
+	id, err := get("id", brightcoveVideo)
+	if err != nil {
+		return nil, "", err
 	}
 
-	publishedDateI, ok := brightcoveVideo["updated_at"]
-	if !ok {
-		return nil, "", errors.New(fmt.Sprintf("updated_at field of native brightcove video JSON is null. Skipping message."))
-	}
-	publishedDate, ok := publishedDateI.(string)
-	if !ok {
-		return nil, "", errors.New(fmt.Sprintf("updated_at field of native brightcove video JSON is not a string. Skipping message."))
-
+	publishedDate, err := get("updated_at", brightcoveVideo)
+	if err != nil {
+		return nil, "", err
 	}
 
-	mediaType := viodeMediaTypeBase
-	fileNameI, ok := brightcoveVideo["name"]
-	if !ok {
+	mediaType := videoMediaTypeBase
+	videoName, err := get("name", brightcoveVideo)
+	if err != nil {
 		warnLogger.Printf("filename field of native brightcove video JSON is null, type will be video/.")
 	} else {
-		fileName, ok := fileNameI.(string)
-		if !ok {
-			warnLogger.Printf("filename field of native brightcove video JSON is not as string, type will be video/.")
-		} else {
-			extension := strings.TrimPrefix(filepath.Ext(fileName), ".")
-			mediaType = mediaType + extension
-		}
+		extension := strings.TrimPrefix(filepath.Ext(videoName), ".")
+		mediaType = mediaType + extension
 	}
-
 	i := identifier{
 		Authority:       brigthcoveAuthority,
 		IdentifierValue: id,
@@ -302,7 +280,7 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 	}
 	//fmt.Println(strconv.Quote(ss))
 	e := publicationEvent{
-		ContentUri:   contentUri,
+		ContentURI:   contentURI,
 		Payload:      string(marshalledPayload),
 		LastModified: lastModified,
 	}
@@ -312,4 +290,28 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 		return nil, "", err
 	}
 	return marshalledEvent, uuid, nil
+}
+
+func get(key string, brightcoveVideo map[string]interface{}) (val string, err error) {
+	valueI, ok := brightcoveVideo[key]
+	if !ok {
+		return "", fmt.Errorf("%s field of native brightcove video JSON is null. Skipping message", key)
+	}
+	val, ok = valueI.(string)
+	if !ok {
+		return "", fmt.Errorf("%s field of native brightcove video JSON is not a string. Skipping message", key)
+	}
+	return val, nil
+}
+
+func prettyPrintConfig(c consumer.QueueConfig, p producer.MessageProducerConfig) string {
+	return fmt.Sprintf("Config: [\n\t%s\n\t%s\n]", prettyPrintConsumerConfig(c), prettyPrintProducerConfig(p))
+}
+
+func prettyPrintConsumerConfig(c consumer.QueueConfig) string {
+	return fmt.Sprintf("consumerConfig: [\n\t\taddr: [%v]\n\t\tgroup: [%v]\n\t\ttopic: [%v]\n\t\treadQueueHeader: [%v]\n\t]", c.Addrs, c.Group, c.Topic, c.Queue)
+}
+
+func prettyPrintProducerConfig(p producer.MessageProducerConfig) string {
+	return fmt.Sprintf("producerConfig: [\n\t\taddr: [%v]\n\t\ttopic: [%v]\n\t\twriteQueueHeader: [%v]\n\t]", p.Addr, p.Topic, p.Queue)
 }
