@@ -66,7 +66,7 @@ func main() {
 	app := cli.App("video-mapper", "Catch native video content transform into Content and send back to queue.")
 	addresses := app.Strings(cli.StringsOpt{
 		Name:   "queue-addresses",
-		Value:  []string{"http://localhost:9090"},
+		Value:  nil,
 		Desc:   "Addresses to connect to the queue (hostnames).",
 		EnvVar: "Q_ADDR",
 	})
@@ -108,6 +108,10 @@ func main() {
 	})
 	app.Action = func() {
 		initLogs(os.Stdout, os.Stdout, os.Stderr)
+		if len(*addresses) == 0 {
+			errorLogger.Println("No queue address provided. Quitting...")
+			cli.Exit(1)
+		}
 		consumerConfig := consumer.QueueConfig{
 			Addrs:                *addresses,
 			Group:                *group,
