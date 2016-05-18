@@ -18,6 +18,8 @@ import (
 	"github.com/jawher/mow.cli"
 	"io/ioutil"
 	"strings"
+	"time"
+	"github.com/satori/go.uuid"
 )
 
 const videoContentURIBase = "http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/"
@@ -173,8 +175,8 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 		Body: string(body),
 		Headers: map[string]string{
 			"X-Request-Id":      tid,
-			"Message-Timestamp": r.Header.Get("X-Message-Timestamp"),
-			"Message-Id":        "f03d84da-c400-4165-87dc-9b026fbeaa6d",
+			"Message-Timestamp": time.Now().Format("2016-04-29T11:02:58.304Z"),
+			"Message-Id":        uuid.NewV4().String(),
 			"Message-Type":      "cms-content-published",
 			"Content-Type":      "application/json",
 			"Origin-System-Id":  "http://cmdb.ft.com/systems/brightcove",
@@ -208,16 +210,24 @@ func (v videoMapper) queueConsume(m consumer.Message) {
 		infoLogger.Printf("%v - Ignoring message with different Origin-System-Id %v", tid, m.Headers["Origin-System-Id"])
 		return
 	}
-	marshalledEvent, uuid, err := v.transformMsg(m)
+	marshalledEvent, contentUuid, err := v.transformMsg(m)
 	if err != nil {
 		warnLogger.Printf("%v - Error error consuming message: %v", tid, err)
 		return
 	}
-	err = (*v.messageProducer).SendMessage("", producer.Message{Headers: m.Headers, Body: string(marshalledEvent)})
+	headers := map[string]string{
+		"X-Request-Id":      tid,
+		"Message-Timestamp": time.Now().Format("2016-04-29T11:02:58.304Z"),
+		"Message-Id":        uuid.NewV4().String(),
+		"Message-Type":      "cms-content-published",
+		"Content-Type":      "application/json",
+		"Origin-System-Id":  "http://cmdb.ft.com/systems/brightcove",
+	}
+	err = (*v.messageProducer).SendMessage("", producer.Message{Headers: headers, Body: string(marshalledEvent)})
 	if err != nil {
 		warnLogger.Printf("%v - Error sending transformed message to queue: %v", tid, err)
 	}
-	infoLogger.Printf("%v - Mapped and sent for uuid: %v", tid, uuid)
+	infoLogger.Printf("%v - Mapped and sent for uuid: %v", tid, contentUuid)
 }
 
 func (v videoMapper) mapMessage(m consumer.Message) (marshalledPubEvent []byte, uuid string, err error) {
