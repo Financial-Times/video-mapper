@@ -26,7 +26,7 @@ const videoContentURIBase = "http://brightcove-video-model-mapper-iw-uk-p.svc.ft
 const brigthcoveAuthority = "http://api.ft.com/system/BRIGHTCOVE"
 const videoMediaTypeBase = "video/"
 const brightcoveOrigin = "http://cmdb.ft.com/systems/brightcove"
-const dateFormat = "2006-06-02T03:04:05.000Z0700"
+const dateFormat = "2006-01-02T03:04:05.000Z0700"
 
 type publicationEvent struct {
 	ContentURI   string  `json:"contentUri"`
