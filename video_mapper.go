@@ -24,7 +24,7 @@ import (
 
 const videoContentURIBase = "http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/"
 const brigthcoveAuthority = "http://api.ft.com/system/BRIGHTCOVE"
-const videoMediaTypeBase = "video/"
+const videoMediaTypeBase = "video"
 const brightcoveOrigin = "http://cmdb.ft.com/systems/brightcove"
 const dateFormat = "2006-01-02T03:04:05.000Z0700"
 
@@ -256,7 +256,9 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 		warnLogger.Printf("filename field of native brightcove video JSON is null, type will be video/.")
 	} else {
 		extension := strings.TrimPrefix(filepath.Ext(videoName), ".")
-		mediaType = mediaType + extension
+		if extension != "" {
+			mediaType = mediaType + "/" + extension
+		}
 	}
 	i := identifier{
 		Authority:       brigthcoveAuthority,
