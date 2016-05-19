@@ -26,6 +26,7 @@ const videoContentURIBase = "http://brightcove-video-model-mapper-iw-uk-p.svc.ft
 const brigthcoveAuthority = "http://api.ft.com/system/BRIGHTCOVE"
 const videoMediaTypeBase = "video/"
 const brightcoveOrigin = "http://cmdb.ft.com/systems/brightcove"
+const dateFormat = "2006-06-02T03:04:05.000Z0700"
 
 type publicationEvent struct {
 	ContentURI   string  `json:"contentUri"`
@@ -173,14 +174,7 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 	tid := r.Header.Get("X-Request-Id")
 	m := consumer.Message{
 		Body: string(body),
-		Headers: map[string]string{
-			"X-Request-Id":      tid,
-			"Message-Timestamp": time.Now().Format("2016-04-29T11:02:58.304Z"),
-			"Message-Id":        uuid.NewV4().String(),
-			"Message-Type":      "cms-content-published",
-			"Content-Type":      "application/json",
-			"Origin-System-Id":  "http://cmdb.ft.com/systems/brightcove",
-		},
+		Headers: createHeader(tid),
 	}
 	mappedVideoBytes, _, err := v.transformMsg(m)
 	if err != nil {
@@ -215,14 +209,7 @@ func (v videoMapper) queueConsume(m consumer.Message) {
 		warnLogger.Printf("%v - Error error consuming message: %v", tid, err)
 		return
 	}
-	headers := map[string]string{
-		"X-Request-Id":      tid,
-		"Message-Timestamp": time.Now().Format("2016-04-29T11:02:58.304Z"),
-		"Message-Id":        uuid.NewV4().String(),
-		"Message-Type":      "cms-content-published",
-		"Content-Type":      "application/json",
-		"Origin-System-Id":  "http://cmdb.ft.com/systems/brightcove",
-	}
+	headers := createHeader(tid)
 	err = (*v.messageProducer).SendMessage("", producer.Message{Headers: headers, Body: string(marshalledEvent)})
 	if err != nil {
 		warnLogger.Printf("%v - Error sending transformed message to queue: %v", tid, err)
@@ -294,6 +281,17 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 		return nil, "", err
 	}
 	return marshalledEvent, uuid, nil
+}
+
+func createHeader(tid string) map[string]string {
+	return map[string]string{
+		"X-Request-Id":      tid,
+		"Message-Timestamp": time.Now().Format(dateFormat),
+		"Message-Id":        uuid.NewV4().String(),
+		"Message-Type":      "cms-content-published",
+		"Content-Type":      "application/json",
+		"Origin-System-Id":  "http://cmdb.ft.com/systems/brightcove",
+	}
 }
 
 func get(key string, brightcoveVideo map[string]interface{}) (val string, err error) {
