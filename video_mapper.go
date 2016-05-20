@@ -260,7 +260,7 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 			mediaTypeC := videoMediaTypeBase + "/" + extension
 			mediaType = &mediaTypeC
 		} else {
-			warnLogger.Printf("filename field of native brightcove video JSON is null, mediaType will be null.")
+			warnLogger.Printf("extension is missing from video name, mediaType will be null.")
 		}
 	}
 	i := identifier{
