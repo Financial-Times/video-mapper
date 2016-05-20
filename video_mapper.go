@@ -43,7 +43,7 @@ type payload struct {
 	UUID             string       `json:"uuid"`
 	Identifiers      []identifier `json:"identifiers"`
 	PublishedDate    string       `json:"publishedDate"`
-	MediaType        string       `json:"mediaType"`
+	MediaType        string       `json:"mediaType,omitempty"`
 	PublishReference string       `json:"publishReference"`
 	LastModified     string       `json:"lastModified"`
 }
