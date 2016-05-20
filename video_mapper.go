@@ -43,7 +43,7 @@ type payload struct {
 	UUID             string       `json:"uuid"`
 	Identifiers      []identifier `json:"identifiers"`
 	PublishedDate    string       `json:"publishedDate"`
-	MediaType        *string      `json:"mediaType"`
+	MediaType        string       `json:"mediaType"`
 	PublishReference string       `json:"publishReference"`
 	LastModified     string       `json:"lastModified"`
 }
@@ -250,15 +250,14 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 		return nil, "", err
 	}
 
-	var mediaType *string
+	mediaType := ""
 	videoName, err := get("name", brightcoveVideo)
 	if err != nil {
 		warnLogger.Printf("filename field of native brightcove video JSON is null, mediaType will be null.")
 	} else {
 		extension := strings.TrimPrefix(filepath.Ext(videoName), ".")
 		if extension != "" {
-			mediaTypeC := videoMediaTypeBase + "/" + extension
-			mediaType = &mediaTypeC
+			mediaType = videoMediaTypeBase + "/" + extension
 		} else {
 			warnLogger.Printf("extension is missing from video name, mediaType will be null.")
 		}
