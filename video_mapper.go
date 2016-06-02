@@ -16,10 +16,10 @@ import (
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
+	"github.com/satori/go.uuid"
 	"io/ioutil"
 	"strings"
 	"time"
-	"github.com/satori/go.uuid"
 )
 
 const videoContentURIBase = "http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/"
@@ -150,7 +150,7 @@ func (v videoMapper) listen(hc *healthcheck) {
 }
 
 func (v videoMapper) consumeUntilSigterm() {
-	infoLogger.Printf("Starting queue consumer: %# v", v.messageConsumer)
+	infoLogger.Printf("Starting queue consumer: %#v", v.messageConsumer)
 	var consumerWaitGroup sync.WaitGroup
 	consumerWaitGroup.Add(1)
 	go func() {
@@ -173,7 +173,7 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	tid := r.Header.Get("X-Request-Id")
 	m := consumer.Message{
-		Body: string(body),
+		Body:    string(body),
 		Headers: createHeader(tid),
 	}
 	mappedVideoBytes, _, err := v.transformMsg(m)
@@ -182,6 +182,7 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
+
 	_, err = w.Write(mappedVideoBytes)
 	if err != nil {
 		warnLogger.Printf("%v - Writing response error: [%v]", tid, err)
@@ -253,13 +254,13 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 	mediaType := ""
 	videoName, err := get("name", brightcoveVideo)
 	if err != nil {
-		warnLogger.Printf("filename field of native brightcove video JSON is null, mediaType will be null.")
+		warnLogger.Printf("%v - filename field of native brightcove video JSON is null, mediaType will be null.", publishReference)
 	} else {
 		extension := strings.TrimPrefix(filepath.Ext(videoName), ".")
 		if extension != "" {
 			mediaType = videoMediaTypeBase + "/" + extension
 		} else {
-			warnLogger.Printf("extension is missing from video name, mediaType will be null.")
+			warnLogger.Printf("%v - extension is missing from video name, mediaType will be null.", publishReference)
 		}
 	}
 	i := identifier{
@@ -281,7 +282,7 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 	}
 	marshalledEvent, err := json.Marshal(e)
 	if err != nil {
-		warnLogger.Printf("Couldn't marshall event %v, skipping message.", e)
+		warnLogger.Printf("%v - Couldn't marshall event %v, skipping message.", e)
 		return nil, "", err
 	}
 	return marshalledEvent, uuid, nil
