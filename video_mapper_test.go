@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
-	"testing"
 	"os"
+	"testing"
 )
 
 func TestExtractUuid_NormalCase(t *testing.T) {
@@ -21,8 +21,8 @@ func TestExtractUuid_NormalCase(t *testing.T) {
 				`{
 				   "uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c",
 				   "id": "4492075574001",
-				   "name": "test-video.mp4",
-                                   "updated_at": "2015-09-17T17:41:20.782Z"
+				   "original_filename": "test-video.mp4",
+                                   "published_at": "2015-09-17T17:41:20.782Z"
 				}`,
 			},
 			"bad50c54-76d9-30e9-8734-b999c708aa4c",
@@ -78,7 +78,7 @@ func TestExtractUuid_NormalCase(t *testing.T) {
 					  },
 					  "link": null,
 					  "long_description": null,
-					  "name": "sea_marvels.mp4",
+					  "original_filename": "sea_marvels.mp4",
 					  "reference_id": null,
 					  "schedule": null,
 					  "sharing": null,
@@ -101,7 +101,7 @@ func TestExtractUuid_NormalCase(t *testing.T) {
 					      "srclang": "en"
 					    }
 					  ],
-					  "updated_at": "2015-09-17T17:41:20.782Z"
+					  "published_at": "2015-09-17T17:41:20.782Z"
 				}`,
 			},
 			"bad50c54-76d9-30e9-8734-b999c708aa4c",
@@ -120,8 +120,8 @@ func TestExtractUuid_NormalCase(t *testing.T) {
 				`{
 				   "uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c",
 				   "id": "4492075574001",
-				   "name": "test-video",
-                                   "updated_at": "2015-09-17T17:41:20.782Z"
+				   "original_filename": "test-video",
+                                   "published_at": "2015-09-17T17:41:20.782Z"
 				}`,
 			},
 			"bad50c54-76d9-30e9-8734-b999c708aa4c",

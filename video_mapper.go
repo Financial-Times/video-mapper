@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strconv"
 	"sync"
 	"syscall"
@@ -246,21 +245,19 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 		return nil, "", err
 	}
 
-	publishedDate, err := get("updated_at", brightcoveVideo)
+	publishedDate, err := get("published_at", brightcoveVideo)
 	if err != nil {
 		return nil, "", err
 	}
 
 	mediaType := ""
-	videoName, err := get("name", brightcoveVideo)
+	fileName, err := get("original_filename", brightcoveVideo)
 	if err != nil {
 		warnLogger.Printf("%v - filename field of native brightcove video JSON is null, mediaType will be null.", publishReference)
 	} else {
-		extension := strings.TrimPrefix(filepath.Ext(videoName), ".")
-		if extension != "" {
-			mediaType = videoMediaTypeBase + "/" + extension
-		} else {
-			warnLogger.Printf("%v - extension is missing from video name, mediaType will be null.", publishReference)
+		mediaType, err = buildMediaType(fileName)
+		if err != nil {
+			warnLogger.Printf("%v - building mediaType error: [%v], mediaType will be null.", publishReference, err)
 		}
 	}
 	i := identifier{
@@ -286,6 +283,18 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 		return nil, "", err
 	}
 	return marshalledEvent, uuid, nil
+}
+
+func buildMediaType(fileName string) (mediaType string, err error) {
+	dot := strings.LastIndex(fileName, ".")
+	if dot == -1 {
+		return "", fmt.Errorf("extension is missing: [%s]", fileName)
+	}
+	extension := fileName[dot+1:]
+	if extension == "" {
+		return "", fmt.Errorf("extension is missing: [%s]", fileName)
+	}
+	return videoMediaTypeBase + "/" + extension, nil
 }
 
 func createHeader(tid string) map[string]string {
