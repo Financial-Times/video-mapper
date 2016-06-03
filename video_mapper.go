@@ -28,9 +28,9 @@ const brightcoveOrigin = "http://cmdb.ft.com/systems/brightcove"
 const dateFormat = "2006-01-02T03:04:05.000Z0700"
 
 type publicationEvent struct {
-	ContentURI   string  `json:"contentUri"`
-	Payload      payload `json:"payload"`
-	LastModified string  `json:"lastModified"`
+	ContentURI   string   `json:"contentUri"`
+	Payload      *payload `json:"payload,omitempty"`
+	LastModified string   `json:"lastModified"`
 }
 
 type identifier struct {
@@ -242,18 +242,23 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 
 	id, err := get("id", brightcoveVideo)
 	if err != nil {
-		return nil, "", err
+		return nil, uuid, err
 	}
 
-	publishedDate, err := get("published_at", brightcoveVideo)
+	publishEvent, err := isPublishEvent(brightcoveVideo)
 	if err != nil {
-		return nil, "", err
+		return nil, uuid, err
 	}
-
+	//it's an unpublish event
+	if !publishEvent {
+		marshalledPubEvent, err = buildAndMarshalPublicationEvent(nil, contentURI, lastModified, publishReference)
+		return marshalledPubEvent, uuid, err
+	}
+	publishedDate, _ := get("published_at", brightcoveVideo) // at this point we know there is no error
 	mediaType := ""
 	fileName, err := get("original_filename", brightcoveVideo)
 	if err != nil {
-		warnLogger.Printf("%v - filename field of native brightcove video JSON is null, mediaType will be null.", publishReference)
+		warnLogger.Printf("%v - original_filename field of native brightcove video JSON is null, mediaType will be null.", publishReference)
 	} else {
 		mediaType, err = buildMediaType(fileName)
 		if err != nil {
@@ -264,7 +269,7 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 		Authority:       brigthcoveAuthority,
 		IdentifierValue: id,
 	}
-	p := payload{
+	p := &payload{
 		UUID:             uuid,
 		Identifiers:      []identifier{i},
 		PublishedDate:    publishedDate,
@@ -272,6 +277,11 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 		PublishReference: publishReference,
 		LastModified:     lastModified,
 	}
+	marshalledPubEvent, err = buildAndMarshalPublicationEvent(p, contentURI, lastModified, publishReference)
+	return marshalledPubEvent, uuid, err
+}
+
+func buildAndMarshalPublicationEvent(p *payload, contentURI, lastModified, pubRef string) (marshalledPubEvent []byte, err error) {
 	e := publicationEvent{
 		ContentURI:   contentURI,
 		Payload:      p,
@@ -279,10 +289,22 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 	}
 	marshalledEvent, err := json.Marshal(e)
 	if err != nil {
-		warnLogger.Printf("%v - Couldn't marshall event %v, skipping message.", e)
-		return nil, "", err
+		warnLogger.Printf("%v - Couldn't marshall event %v, skipping message.", pubRef, e)
+		return nil, err
 	}
-	return marshalledEvent, uuid, nil
+	return marshalledEvent, nil
+}
+
+func isPublishEvent(video map[string]interface{}) (publishEvent bool, err error) {
+	_, err = get("published_at", video)
+	if err == nil {
+		return true, nil
+	}
+	if _, present := video["error_code"]; present {
+		//it's an unpublish event
+		return false, nil
+	}
+	return false, fmt.Errorf("Could not detect event type for video: [%#v]", video)
 }
 
 func buildMediaType(fileName string) (mediaType string, err error) {
@@ -311,11 +333,11 @@ func createHeader(tid string) map[string]string {
 func get(key string, brightcoveVideo map[string]interface{}) (val string, err error) {
 	valueI, ok := brightcoveVideo[key]
 	if !ok {
-		return "", fmt.Errorf("%s field of native brightcove video JSON is null. Skipping message", key)
+		return "", fmt.Errorf("[%s] field of native brightcove video JSON is null. Skipping message", key)
 	}
 	val, ok = valueI.(string)
 	if !ok {
-		return "", fmt.Errorf("%s field of native brightcove video JSON is not a string. Skipping message", key)
+		return "", fmt.Errorf("[%s] field of native brightcove video JSON is not a string. Skipping message", key)
 	}
 	return val, nil
 }

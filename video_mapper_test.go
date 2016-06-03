@@ -131,6 +131,24 @@ func TestExtractUuid_NormalCase(t *testing.T) {
 				`"lastModified":"2016-04-29T11:02:58.304Z"` +
 				`}`,
 		},
+		{
+			consumer.Message{
+				map[string]string{
+					"X-Request-Id":      "tid_123123",
+					"Message-Timestamp": "2016-04-29T11:02:58.304Z",
+				},
+				`{
+				   "uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c",
+				   "id": "4492075574001",
+                                   "error_code": "RESOURCE_NOT_FOUND"
+				}`,
+			},
+			"bad50c54-76d9-30e9-8734-b999c708aa4c",
+			`{` +
+				`"contentUri":"http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
+				`"lastModified":"2016-04-29T11:02:58.304Z"` +
+				`}`,
+		},
 	}
 	m := videoMapper{}
 	initLogs(os.Stdout, os.Stdout, os.Stderr)
@@ -146,6 +164,90 @@ func TestExtractUuid_NormalCase(t *testing.T) {
 		}
 		if actualUUID != test.uuid {
 			t.Errorf("Error retrieving uuid\n%v\nExpected: %s\nActual: %s\n", test.message, test.uuid, actualUUID)
+		}
+	}
+}
+
+func TestIsPublishEvent_PublishedAtFieldPresent_PublishEventAndNoErr(t *testing.T) {
+	video := map[string]interface{}{
+		"id":           "4492075574001",
+		"uuid":         "bad50c54-76d9-30e9-8734-b999c708aa4c",
+		"published_at": "2015-09-17T16:08:37.108Z",
+	}
+	publishEvent, err := isPublishEvent(video)
+	if err != nil {
+		t.Errorf("Expected success. Found err: [%v]", err)
+	}
+	if !publishEvent {
+		t.Errorf("Expected publish event")
+	}
+}
+
+func TestIsPublishEvent_PublishedAtMissingErrorCodePresent_UnpublishEventAndNoErr(t *testing.T) {
+	video := map[string]interface{}{
+		"id":         "4492075574001",
+		"uuid":       "bad50c54-76d9-30e9-8734-b999c708aa4c",
+		"error_code": "RESOURCE_NOT_FOUND",
+	}
+	publishEvent, err := isPublishEvent(video)
+	if err != nil {
+		t.Errorf("Expected success. Found err: [%v]", err)
+	}
+	if publishEvent {
+		t.Errorf("Expected unpublish event")
+	}
+}
+
+func TestIsPublishEvent_PublishedAtAndErrorCodeBothMissing_ReturnError(t *testing.T) {
+	video := map[string]interface{}{
+		"id":   "4492075574001",
+		"uuid": "bad50c54-76d9-30e9-8734-b999c708aa4c",
+	}
+	if _, err := isPublishEvent(video); err == nil {
+		t.Errorf("Expected error")
+	}
+}
+
+func TestBuildMediaType_FilenamesWithExtension_CorrectMediaType(t *testing.T) {
+	var tests = []struct {
+		filename string
+		expected string
+	}{
+		{
+			"foobar.mp4",
+			"video/mp4",
+		},
+		{
+			"foo/bar.avi",
+			"video/avi",
+		},
+		{
+			"foo.bar.mp4",
+			"video/mp4",
+		},
+	}
+
+	for _, test := range tests {
+		actual, err := buildMediaType(test.filename)
+		if err != nil {
+			t.Errorf("Expected success. Found err: [%v]", err)
+		}
+		if actual != test.expected {
+			t.Errorf("Expected: [%v]. Actual: [%v]", test.expected, actual)
+		}
+	}
+}
+
+func TestBuildMediaType_InvalidFilenames_ReturnError(t *testing.T) {
+	var filenames = []string{"foobar", "foobar.", "foo.bar.", ""}
+
+	for _, n := range filenames {
+		actual, err := buildMediaType(n)
+		if actual != "" {
+			t.Errorf("Expected empty media type. Received: [%v]", actual)
+		}
+		if err == nil {
+			t.Errorf("Expected error")
 		}
 	}
 }
