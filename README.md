@@ -1,4 +1,5 @@
 # video-mapper
+[![Circle CI](https://circleci.com/gh/Financial-Times/video-mapper/tree/master.png?style=shield)](https://circleci.com/gh/Financial-Times/video-mapper/tree/master)
 
 Listens to kafka(-bridge) NativeCmsPublicationEvents, gets videos, transforms them to Content, puts them back to kafka(-bridge) to CmsPublicationEvents.
 
