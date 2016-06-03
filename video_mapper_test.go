@@ -251,3 +251,46 @@ func TestBuildMediaType_InvalidFilenames_ReturnError(t *testing.T) {
 		}
 	}
 }
+
+func TestGetPublishedDate(t *testing.T) {
+	var testCases = []struct {
+		video           map[string]interface{}
+		expectedPubDate string
+		expectErr       bool
+	}{
+		{
+			map[string]interface{}{
+				"published_at": "2015-09-17T16:08:37.108Z",
+				"updated_at":   "2015-09-18T16:08:37.108Z",
+			},
+			"2015-09-17T16:08:37.108Z",
+			false,
+		},
+		{
+			map[string]interface{}{
+				"published_at": nil,
+				"updated_at":   "2015-09-18T16:08:37.108Z",
+			},
+			"2015-09-18T16:08:37.108Z",
+			false,
+		},
+		{
+			map[string]interface{}{
+				"published_at": nil,
+				"updated_at":   nil,
+			},
+			"",
+			true,
+		},
+	}
+
+	for _, tc := range testCases {
+		pubDate, err := getPublishedDate(tc.video)
+		if pubDate != tc.expectedPubDate {
+			t.Errorf("Expected: pubDate: [%v]\nActual: pubDate: [%v]", tc.expectedPubDate, pubDate)
+		}
+		if tc.expectErr && err == nil || !tc.expectErr && err != nil {
+			t.Errorf("Expect error [%v]. Actual error: [%v]", tc.expectErr, err)
+		}
+	}
+}

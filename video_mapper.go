@@ -204,7 +204,7 @@ func (v videoMapper) queueConsume(m consumer.Message) {
 		infoLogger.Printf("%v - Ignoring message with different Origin-System-Id %v", tid, m.Headers["Origin-System-Id"])
 		return
 	}
-	marshalledEvent, contentUuid, err := v.transformMsg(m)
+	marshalledEvent, contentUUID, err := v.transformMsg(m)
 	if err != nil {
 		warnLogger.Printf("%v - Error error consuming message: %v", tid, err)
 		return
@@ -214,7 +214,7 @@ func (v videoMapper) queueConsume(m consumer.Message) {
 	if err != nil {
 		warnLogger.Printf("%v - Error sending transformed message to queue: %v", tid, err)
 	}
-	infoLogger.Printf("%v - Mapped and sent for uuid: %v", tid, contentUuid)
+	infoLogger.Printf("%v - Mapped and sent for uuid: %v", tid, contentUUID)
 }
 
 func (v videoMapper) mapMessage(m consumer.Message) (marshalledPubEvent []byte, uuid string, err error) {
@@ -254,7 +254,7 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 		marshalledPubEvent, err = buildAndMarshalPublicationEvent(nil, contentURI, lastModified, publishReference)
 		return marshalledPubEvent, uuid, err
 	}
-	publishedDate, _ := get("published_at", brightcoveVideo) // at this point we know there is no error
+	publishedDate, _ := getPublishedDate(brightcoveVideo) // at this point we know there is no error
 	mediaType := ""
 	fileName, err := get("original_filename", brightcoveVideo)
 	if err != nil {
@@ -296,7 +296,7 @@ func buildAndMarshalPublicationEvent(p *payload, contentURI, lastModified, pubRe
 }
 
 func isPublishEvent(video map[string]interface{}) (publishEvent bool, err error) {
-	_, err = get("published_at", video)
+	_, err = getPublishedDate(video)
 	if err == nil {
 		return true, nil
 	}
@@ -330,14 +330,26 @@ func createHeader(tid string) map[string]string {
 	}
 }
 
+func getPublishedDate(video map[string]interface{}) (val string, err error) {
+	publishedAt, err1 := get("published_at", video)
+	if err1 == nil {
+		return publishedAt, nil
+	}
+	updatedAt, err2 := get("updated_at", video)
+	if err2 == nil {
+		return updatedAt, nil
+	}
+	return "", fmt.Errorf("No valid value could be found for publishedDate: [%v] [%v]", err1, err2)
+}
+
 func get(key string, brightcoveVideo map[string]interface{}) (val string, err error) {
 	valueI, ok := brightcoveVideo[key]
 	if !ok {
-		return "", fmt.Errorf("[%s] field of native brightcove video JSON is null. Skipping message", key)
+		return "", fmt.Errorf("[%s] field of native brightcove video JSON is null", key)
 	}
 	val, ok = valueI.(string)
 	if !ok {
-		return "", fmt.Errorf("[%s] field of native brightcove video JSON is not a string. Skipping message", key)
+		return "", fmt.Errorf("[%s] field of native brightcove video JSON is not a string", key)
 	}
 	return val, nil
 }
