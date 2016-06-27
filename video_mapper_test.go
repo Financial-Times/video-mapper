@@ -28,7 +28,7 @@ func TestExtractUuid_NormalCase(t *testing.T) {
 			"bad50c54-76d9-30e9-8734-b999c708aa4c",
 			`{` +
 				`"contentUri":"http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
-				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"publishedDate":"2015-09-17T17:41:20.782Z","mediaType":"video/mp4","publishReference":"tid_123123","lastModified":"2016-04-29T11:02:58.304Z"},` +
+				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","mediaType":"video/mp4","publishReference":"tid_123123","lastModified":"2016-04-29T11:02:58.304Z"},` +
 				`"lastModified":"2016-04-29T11:02:58.304Z"` +
 				`}`,
 		},
@@ -107,7 +107,7 @@ func TestExtractUuid_NormalCase(t *testing.T) {
 			"bad50c54-76d9-30e9-8734-b999c708aa4c",
 			`{` +
 				`"contentUri":"http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
-				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"publishedDate":"2015-09-17T17:41:20.782Z","mediaType":"video/mp4","publishReference":"tid_123123","lastModified":"2016-04-29T10:59:39.914Z"},` +
+				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","mediaType":"video/mp4","publishReference":"tid_123123","lastModified":"2016-04-29T10:59:39.914Z"},` +
 				`"lastModified":"2016-04-29T10:59:39.914Z"` +
 				`}`,
 		},
@@ -127,7 +127,7 @@ func TestExtractUuid_NormalCase(t *testing.T) {
 			"bad50c54-76d9-30e9-8734-b999c708aa4c",
 			`{` +
 				`"contentUri":"http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
-				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"publishedDate":"2015-09-17T17:41:20.782Z","publishReference":"tid_123123","lastModified":"2016-04-29T11:02:58.304Z"},` +
+				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","publishReference":"tid_123123","lastModified":"2016-04-29T11:02:58.304Z"},` +
 				`"lastModified":"2016-04-29T11:02:58.304Z"` +
 				`}`,
 		},

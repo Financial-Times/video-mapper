@@ -26,6 +26,7 @@ const brigthcoveAuthority = "http://api.ft.com/system/BRIGHTCOVE"
 const videoMediaTypeBase = "video"
 const brightcoveOrigin = "http://cmdb.ft.com/systems/brightcove"
 const dateFormat = "2006-01-02T03:04:05.000Z0700"
+const FTBrandID = "http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"
 
 type publicationEvent struct {
 	ContentURI   string   `json:"contentUri"`
@@ -38,9 +39,14 @@ type identifier struct {
 	IdentifierValue string `json:"identifierValue"`
 }
 
+type brand struct {
+	ID string `json:"id"`
+}
+
 type payload struct {
 	UUID             string       `json:"uuid"`
 	Identifiers      []identifier `json:"identifiers"`
+	Brands           []brand      `json:"brands"`
 	PublishedDate    string       `json:"publishedDate"`
 	MediaType        string       `json:"mediaType,omitempty"`
 	PublishReference string       `json:"publishReference"`
@@ -269,9 +275,13 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 		Authority:       brigthcoveAuthority,
 		IdentifierValue: id,
 	}
+	b := brand{
+		ID: FTBrandID,
+	}
 	p := &payload{
 		UUID:             uuid,
 		Identifiers:      []identifier{i},
+		Brands:           []brand{b},
 		PublishedDate:    publishedDate,
 		MediaType:        mediaType,
 		PublishReference: publishReference,
