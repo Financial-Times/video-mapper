@@ -51,6 +51,7 @@ type payload struct {
 	MediaType        string       `json:"mediaType,omitempty"`
 	PublishReference string       `json:"publishReference"`
 	LastModified     string       `json:"lastModified"`
+	Body             string       `json:"body"`
 }
 
 type videoMapper struct {
@@ -278,6 +279,15 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 	b := brand{
 		ID: FTBrandID,
 	}
+	longDescription, _ := get("long_description", brightcoveVideo)
+	description, _ := get("description", brightcoveVideo)
+	decidedBody := "FT video"
+	if description != "" {
+		decidedBody = description
+	}
+	if longDescription != "" {
+		decidedBody = longDescription
+	}
 	p := &payload{
 		UUID:             uuid,
 		Identifiers:      []identifier{i},
@@ -286,6 +296,7 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 		MediaType:        mediaType,
 		PublishReference: publishReference,
 		LastModified:     lastModified,
+		Body:             decidedBody,
 	}
 	marshalledPubEvent, err = buildAndMarshalPublicationEvent(p, contentURI, lastModified, publishReference)
 	return marshalledPubEvent, uuid, err

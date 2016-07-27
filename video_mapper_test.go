@@ -6,43 +6,7 @@ import (
 	"testing"
 )
 
-func TestExtractUuid_NormalCase(t *testing.T) {
-	var tests = []struct {
-		message         consumer.Message
-		uuid            string
-		marshalledEvent string
-	}{
-		{
-			consumer.Message{
-				map[string]string{
-					"X-Request-Id":      "tid_123123",
-					"Message-Timestamp": "2016-04-29T11:02:58.304Z",
-				},
-				`{
-				   "uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c",
-				   "id": "4492075574001",
-				   "original_filename": "test-video.mp4",
-                                   "published_at": "2015-09-17T17:41:20.782Z"
-				}`,
-			},
-			"bad50c54-76d9-30e9-8734-b999c708aa4c",
-			`{` +
-				`"contentUri":"http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
-				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","mediaType":"video/mp4","publishReference":"tid_123123","lastModified":"2016-04-29T11:02:58.304Z"},` +
-				`"lastModified":"2016-04-29T11:02:58.304Z"` +
-				`}`,
-		},
-		{
-			consumer.Message{
-				map[string]string{
-					"Message-Id":        "fba36a76-137a-4679-85b0-b9c3f95a3f08",
-					"Message-Timestamp": "2016-04-29T10:59:39.914Z",
-					"Message-Type":      "cms-content-published",
-					"Origin-System-Id":  "http://cmdb.ft.com/systems/brightcove",
-					"Content-Type":      "application/json",
-					"X-Request-Id":      "tid_123123",
-				},
-				`{
+const LONG_NATIVE_JSON = `{
 					  "uuid": "bad50c54-76d9-30e9-8734-b999c708aa4c",
 					  "account_id": "1752604059001",
 					  "complete": true,
@@ -102,12 +66,50 @@ func TestExtractUuid_NormalCase(t *testing.T) {
 					    }
 					  ],
 					  "published_at": "2015-09-17T17:41:20.782Z"
+				}`
+
+func TestExtractUuid_NormalCase(t *testing.T) {
+	var tests = []struct {
+		message         consumer.Message
+		uuid            string
+		marshalledEvent string
+	}{
+		{
+			consumer.Message{
+				map[string]string{
+					"X-Request-Id":      "tid_123123",
+					"Message-Timestamp": "2016-04-29T11:02:58.304Z",
+				},
+				`{
+				   "uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c",
+				   "id": "4492075574001",
+				   "original_filename": "test-video.mp4",
+                                   "published_at": "2015-09-17T17:41:20.782Z"
 				}`,
 			},
 			"bad50c54-76d9-30e9-8734-b999c708aa4c",
 			`{` +
 				`"contentUri":"http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
-				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","mediaType":"video/mp4","publishReference":"tid_123123","lastModified":"2016-04-29T10:59:39.914Z"},` +
+				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","mediaType":"video/mp4","publishReference":"tid_123123","lastModified":"2016-04-29T11:02:58.304Z","body":"FT video"},` +
+				`"lastModified":"2016-04-29T11:02:58.304Z"` +
+				`}`,
+		},
+		{
+			consumer.Message{
+				map[string]string{
+					"Message-Id":        "fba36a76-137a-4679-85b0-b9c3f95a3f08",
+					"Message-Timestamp": "2016-04-29T10:59:39.914Z",
+					"Message-Type":      "cms-content-published",
+					"Origin-System-Id":  "http://cmdb.ft.com/systems/brightcove",
+					"Content-Type":      "application/json",
+					"X-Request-Id":      "tid_123123",
+				},
+				LONG_NATIVE_JSON,
+			},
+			"bad50c54-76d9-30e9-8734-b999c708aa4c",
+			`{` +
+				`"contentUri":"http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
+				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","mediaType":"video/mp4","publishReference":"tid_123123","lastModified":"2016-04-29T10:59:39.914Z","body":"FT video"},` +
 				`"lastModified":"2016-04-29T10:59:39.914Z"` +
 				`}`,
 		},
@@ -127,7 +129,7 @@ func TestExtractUuid_NormalCase(t *testing.T) {
 			"bad50c54-76d9-30e9-8734-b999c708aa4c",
 			`{` +
 				`"contentUri":"http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
-				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","publishReference":"tid_123123","lastModified":"2016-04-29T11:02:58.304Z"},` +
+				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","publishReference":"tid_123123","lastModified":"2016-04-29T11:02:58.304Z","body":"FT video"},` +
 				`"lastModified":"2016-04-29T11:02:58.304Z"` +
 				`}`,
 		},
@@ -291,6 +293,125 @@ func TestGetPublishedDate(t *testing.T) {
 		}
 		if tc.expectErr && err == nil || !tc.expectErr && err != nil {
 			t.Errorf("Expect error [%v]. Actual error: [%v]", tc.expectErr, err)
+		}
+	}
+}
+
+func TestExtractBody(t *testing.T) {
+	var tests = []struct {
+		message         consumer.Message
+		marshalledEvent string
+	}{
+		{
+			consumer.Message{
+				map[string]string{
+					"Message-Id":        "fba36a76-137a-4679-85b0-b9c3f95a3f08",
+					"Message-Timestamp": "2016-04-29T10:59:39.914Z",
+					"Message-Type":      "cms-content-published",
+					"Origin-System-Id":  "http://cmdb.ft.com/systems/brightcove",
+					"Content-Type":      "application/json",
+					"X-Request-Id":      "tid_123123",
+				},
+				LONG_NATIVE_JSON,
+			},
+			`{` +
+				`"contentUri":"http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
+				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","mediaType":"video/mp4","publishReference":"tid_123123","lastModified":"2016-04-29T10:59:39.914Z","body":"FT video"},` +
+				`"lastModified":"2016-04-29T10:59:39.914Z"` +
+				`}`,
+		},
+		{
+			consumer.Message{
+				map[string]string{
+					"X-Request-Id":      "tid_123123",
+					"Message-Timestamp": "2016-04-29T11:02:58.304Z",
+				},
+				`{
+				   "uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c",
+				   "id": "4492075574001",
+				   "description": "Jamil Anderlini looks for the real economy of Pyongyang",
+				   "original_filename": "test-video",
+                                   "published_at": "2015-09-17T17:41:20.782Z"
+				}`,
+			},
+			`{` +
+				`"contentUri":"http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
+				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","publishReference":"tid_123123","lastModified":"2016-04-29T11:02:58.304Z","body":"Jamil Anderlini looks for the real economy of Pyongyang"},` +
+				`"lastModified":"2016-04-29T11:02:58.304Z"` +
+				`}`,
+		},
+		{
+			consumer.Message{
+				map[string]string{
+					"X-Request-Id":      "tid_123123",
+					"Message-Timestamp": "2016-04-29T11:02:58.304Z",
+				},
+				`{
+				   "uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c",
+				   "id": "4492075574001",
+				   "original_filename": "test-video",
+				   "long_description": "Jamil Anderlini looks for the real economy of Pyongyang",
+                                   "published_at": "2015-09-17T17:41:20.782Z"
+				}`,
+			},
+			`{` +
+				`"contentUri":"http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
+				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","publishReference":"tid_123123","lastModified":"2016-04-29T11:02:58.304Z","body":"Jamil Anderlini looks for the real economy of Pyongyang"},` +
+				`"lastModified":"2016-04-29T11:02:58.304Z"` +
+				`}`,
+		},
+		{
+			consumer.Message{
+				map[string]string{
+					"X-Request-Id":      "tid_123123",
+					"Message-Timestamp": "2016-04-29T11:02:58.304Z",
+				},
+				`{
+				   "uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c",
+				   "id": "4492075574001",
+				   "original_filename": "test-video",
+				   "description": "shouldnt be there",
+				   "long_description": "Jamil Anderlini looks for the real economy of Pyongyang",
+                                   "published_at": "2015-09-17T17:41:20.782Z"
+				}`,
+			},
+			`{` +
+				`"contentUri":"http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
+				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","publishReference":"tid_123123","lastModified":"2016-04-29T11:02:58.304Z","body":"Jamil Anderlini looks for the real economy of Pyongyang"},` +
+				`"lastModified":"2016-04-29T11:02:58.304Z"` +
+				`}`,
+		},
+		{
+			consumer.Message{
+				map[string]string{
+					"X-Request-Id":      "tid_123123",
+					"Message-Timestamp": "2016-04-29T11:02:58.304Z",
+				},
+				`{
+				   "uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c",
+				   "id": "4492075574001",
+				   "original_filename": "test-video",
+                                   "published_at": "2015-09-17T17:41:20.782Z"
+				}`,
+			},
+			`{` +
+				`"contentUri":"http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
+				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","publishReference":"tid_123123","lastModified":"2016-04-29T11:02:58.304Z","body":"FT video"},` +
+				`"lastModified":"2016-04-29T11:02:58.304Z"` +
+				`}`,
+		},
+	}
+	m := videoMapper{}
+	initLogs(os.Stdout, os.Stdout, os.Stderr)
+	for _, test := range tests {
+		actualMarshalledEvent, _, err := m.mapMessage(test.message)
+		if err != nil {
+			t.Errorf("Error mapping message\n%v\n%v", test.message, err.Error())
+			continue
+		}
+		actualMarshalledEventS := string(actualMarshalledEvent)
+		if actualMarshalledEventS != test.marshalledEvent {
+			t.Errorf("Error mapping message\n%v\nExpected: %s\nActual: %s\n", test.message, test.marshalledEvent, actualMarshalledEventS)
 		}
 	}
 }
