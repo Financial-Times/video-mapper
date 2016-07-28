@@ -19,6 +19,7 @@ import (
 	"io/ioutil"
 	"strings"
 	"time"
+	"bytes"
 )
 
 const videoContentURIBase = "http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/"
@@ -51,7 +52,7 @@ type payload struct {
 	MediaType        string       `json:"mediaType,omitempty"`
 	PublishReference string       `json:"publishReference"`
 	LastModified     string       `json:"lastModified"`
-	Body             string       `json:"body"`
+	Body             string       `xml:"" json:"body"`
 }
 
 type videoMapper struct {
@@ -300,12 +301,22 @@ func buildAndMarshalPublicationEvent(p *payload, contentURI, lastModified, pubRe
 		Payload:      p,
 		LastModified: lastModified,
 	}
-	marshalledEvent, err := json.Marshal(e)
+	marshalledEvent, err := unsafeJSONMarshal(e)
 	if err != nil {
 		warnLogger.Printf("%v - Couldn't marshall event %v, skipping message.", pubRef, e)
 		return nil, err
 	}
 	return marshalledEvent, nil
+}
+
+func unsafeJSONMarshal(v interface{}) ([]byte, error) {
+	b, err := json.Marshal(v)
+	if (err != nil) {
+		return nil, err
+	}
+	b = bytes.Replace(b, []byte("\\u003c"), []byte("<"), -1)
+	b = bytes.Replace(b, []byte("\\u003e"), []byte(">"), -1)
+	return b, nil
 }
 
 func isPublishEvent(video map[string]interface{}) (publishEvent bool, err error) {
@@ -365,7 +376,7 @@ func getBody(video map[string]interface{}) string {
 	if longDescription != "" {
 		decidedBody = longDescription
 	}
-	return decidedBody;
+	return "<body>" + decidedBody + "</body>";
 }
 
 func get(key string, brightcoveVideo map[string]interface{}) (val string, err error) {
