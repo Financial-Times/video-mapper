@@ -51,6 +51,7 @@ type payload struct {
 	MediaType        string       `json:"mediaType,omitempty"`
 	PublishReference string       `json:"publishReference"`
 	LastModified     string       `json:"lastModified"`
+	Body             string       `json:"body"`
 }
 
 type videoMapper struct {
@@ -278,6 +279,7 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 	b := brand{
 		ID: FTBrandID,
 	}
+	body := getBody(brightcoveVideo)
 	p := &payload{
 		UUID:             uuid,
 		Identifiers:      []identifier{i},
@@ -286,6 +288,7 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 		MediaType:        mediaType,
 		PublishReference: publishReference,
 		LastModified:     lastModified,
+		Body:             body,
 	}
 	marshalledPubEvent, err = buildAndMarshalPublicationEvent(p, contentURI, lastModified, publishReference)
 	return marshalledPubEvent, uuid, err
@@ -350,6 +353,19 @@ func getPublishedDate(video map[string]interface{}) (val string, err error) {
 		return updatedAt, nil
 	}
 	return "", fmt.Errorf("No valid value could be found for publishedDate: [%v] [%v]", err1, err2)
+}
+
+func getBody(video map[string]interface{}) string {
+	longDescription, _ := get("long_description", video)
+	description, _ := get("description", video)
+	decidedBody := "FT video"
+	if description != "" {
+		decidedBody = description
+	}
+	if longDescription != "" {
+		decidedBody = longDescription
+	}
+	return decidedBody;
 }
 
 func get(key string, brightcoveVideo map[string]interface{}) (val string, err error) {
