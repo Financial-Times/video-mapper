@@ -52,7 +52,7 @@ type payload struct {
 	MediaType        string       `json:"mediaType,omitempty"`
 	PublishReference string       `json:"publishReference"`
 	LastModified     string       `json:"lastModified"`
-	Body             string       `xml:"" json:"body"`
+	Body             string       `json:"body"`
 }
 
 type videoMapper struct {
