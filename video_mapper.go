@@ -28,6 +28,7 @@ const videoMediaTypeBase = "video"
 const brightcoveOrigin = "http://cmdb.ft.com/systems/brightcove"
 const dateFormat = "2006-01-02T03:04:05.000Z0700"
 const FTBrandID = "http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"
+const defaultVideoBody = "video"
 
 type publicationEvent struct {
 	ContentURI   string   `json:"contentUri"`
@@ -369,7 +370,7 @@ func getPublishedDate(video map[string]interface{}) (val string, err error) {
 func getBody(video map[string]interface{}) string {
 	longDescription, _ := get("long_description", video)
 	description, _ := get("description", video)
-	decidedBody := "FT video"
+	decidedBody := defaultVideoBody
 	if description != "" {
 		decidedBody = description
 	}
