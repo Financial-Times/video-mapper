@@ -9,6 +9,7 @@ import (
 	"sync"
 	"syscall"
 
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/Financial-Times/message-queue-go-producer/producer"
@@ -19,7 +20,6 @@ import (
 	"io/ioutil"
 	"strings"
 	"time"
-	"bytes"
 )
 
 const videoContentURIBase = "http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/"
@@ -27,7 +27,7 @@ const brigthcoveAuthority = "http://api.ft.com/system/BRIGHTCOVE"
 const videoMediaTypeBase = "video"
 const brightcoveOrigin = "http://cmdb.ft.com/systems/brightcove"
 const dateFormat = "2006-01-02T03:04:05.000Z0700"
-const FTBrandID = "http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"
+const ftBrandID = "http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"
 const defaultVideoBody = "video"
 
 type publicationEvent struct {
@@ -177,9 +177,7 @@ func (v videoMapper) consumeUntilSigterm() {
 func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
-		return
+		writerBadRequest(w, err)
 	}
 	tid := r.Header.Get("X-Request-Id")
 	m := consumer.Message{
@@ -188,15 +186,21 @@ func (v videoMapper) mapHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	mappedVideoBytes, _, err := v.transformMsg(m)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
-		return
+		writerBadRequest(w, err)
 	}
-
 	_, err = w.Write(mappedVideoBytes)
 	if err != nil {
 		warnLogger.Printf("%v - Writing response error: [%v]", tid, err)
 	}
+}
+
+func writerBadRequest(w http.ResponseWriter, err error) {
+	w.WriteHeader(http.StatusBadRequest)
+	_, err2 := w.Write([]byte(err.Error()))
+	if err2 != nil {
+		warnLogger.Printf("Couldn't write Bad Request response. %v", err2)
+	}
+	return
 }
 
 func (v videoMapper) transformMsg(m consumer.Message) (marshalledEvent []byte, uuid string, err error) {
@@ -277,7 +281,7 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 		IdentifierValue: id,
 	}
 	b := brand{
-		ID: FTBrandID,
+		ID: ftBrandID,
 	}
 	body := getBody(brightcoveVideo)
 	p := &payload{
@@ -312,7 +316,7 @@ func buildAndMarshalPublicationEvent(p *payload, contentURI, lastModified, pubRe
 
 func unsafeJSONMarshal(v interface{}) ([]byte, error) {
 	b, err := json.Marshal(v)
-	if (err != nil) {
+	if err != nil {
 		return nil, err
 	}
 	b = bytes.Replace(b, []byte("\\u003c"), []byte("<"), -1)
@@ -377,7 +381,7 @@ func getBody(video map[string]interface{}) string {
 	if longDescription != "" {
 		decidedBody = longDescription
 	}
-	return "<body>" + decidedBody + "</body>";
+	return "<body>" + decidedBody + "</body>"
 }
 
 func getMediaType(brightcoveVideo map[string]interface{}, publishReference string) (mediaType string) {

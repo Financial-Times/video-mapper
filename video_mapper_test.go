@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-const LONG_NATIVE_JSON = `{
+const longNativeJSON = `{
 					  "uuid": "bad50c54-76d9-30e9-8734-b999c708aa4c",
 					  "account_id": "1752604059001",
 					  "complete": true,
@@ -79,11 +79,11 @@ func TestExtractUuid_NormalCase(t *testing.T) {
 	}{
 		{
 			consumer.Message{
-				map[string]string{
+				Headers: map[string]string{
 					"X-Request-Id":      "tid_123123",
 					"Message-Timestamp": "2016-04-29T11:02:58.304Z",
 				},
-				`{
+				Body: `{
 				   "uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c",
 				   "id": "4492075574001",
 				   "name": "Mediterranian: Storms",
@@ -100,7 +100,7 @@ func TestExtractUuid_NormalCase(t *testing.T) {
 		},
 		{
 			consumer.Message{
-				map[string]string{
+				Headers: map[string]string{
 					"Message-Id":        "fba36a76-137a-4679-85b0-b9c3f95a3f08",
 					"Message-Timestamp": "2016-04-29T10:59:39.914Z",
 					"Message-Type":      "cms-content-published",
@@ -108,7 +108,7 @@ func TestExtractUuid_NormalCase(t *testing.T) {
 					"Content-Type":      "application/json",
 					"X-Request-Id":      "tid_123123",
 				},
-				LONG_NATIVE_JSON,
+				Body: longNativeJSON,
 			},
 			"bad50c54-76d9-30e9-8734-b999c708aa4c",
 			`{` +
@@ -119,11 +119,11 @@ func TestExtractUuid_NormalCase(t *testing.T) {
 		},
 		{
 			consumer.Message{
-				map[string]string{
+				Headers: map[string]string{
 					"X-Request-Id":      "tid_123123",
 					"Message-Timestamp": "2016-04-29T11:02:58.304Z",
 				},
-				`{
+				Body: `{
 				   "uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c",
 				   "id": "4492075574001",
 				   "name": "Mediterranian: Storms",
@@ -140,11 +140,11 @@ func TestExtractUuid_NormalCase(t *testing.T) {
 		},
 		{
 			consumer.Message{
-				map[string]string{
+				Headers: map[string]string{
 					"X-Request-Id":      "tid_123123",
 					"Message-Timestamp": "2016-04-29T11:02:58.304Z",
 				},
-				`{
+				Body: `{
 				   "uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c",
 				   "id": "4492075574001",
 				   "name": "Mediterranian: Storms",
@@ -310,7 +310,7 @@ func TestExtractBody(t *testing.T) {
 	}{
 		{
 			consumer.Message{
-				map[string]string{
+				Headers: map[string]string{
 					"Message-Id":        "fba36a76-137a-4679-85b0-b9c3f95a3f08",
 					"Message-Timestamp": "2016-04-29T10:59:39.914Z",
 					"Message-Type":      "cms-content-published",
@@ -318,7 +318,7 @@ func TestExtractBody(t *testing.T) {
 					"Content-Type":      "application/json",
 					"X-Request-Id":      "tid_123123",
 				},
-				LONG_NATIVE_JSON,
+				Body: longNativeJSON,
 			},
 			`{` +
 				`"contentUri":"http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
@@ -328,11 +328,11 @@ func TestExtractBody(t *testing.T) {
 		},
 		{
 			consumer.Message{
-				map[string]string{
+				Headers: map[string]string{
 					"X-Request-Id":      "tid_123123",
 					"Message-Timestamp": "2016-04-29T11:02:58.304Z",
 				},
-				`{
+				Body: `{
 				   "uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c",
 				   "id": "4492075574001",
 				   "description": "Jamil Anderlini looks for the real economy of Pyongyang",
@@ -349,11 +349,11 @@ func TestExtractBody(t *testing.T) {
 		},
 		{
 			consumer.Message{
-				map[string]string{
+				Headers: map[string]string{
 					"X-Request-Id":      "tid_123123",
 					"Message-Timestamp": "2016-04-29T11:02:58.304Z",
 				},
-				`{
+				Body: `{
 				   "uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c",
 				   "id": "4492075574001",
 				   "name": "Mediterranian: Storms",
@@ -370,11 +370,11 @@ func TestExtractBody(t *testing.T) {
 		},
 		{
 			consumer.Message{
-				map[string]string{
+				Headers: map[string]string{
 					"X-Request-Id":      "tid_123123",
 					"Message-Timestamp": "2016-04-29T11:02:58.304Z",
 				},
-				`{
+				Body: `{
 				   "uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c",
 				   "id": "4492075574001",
 				   "name": "Mediterranian: Storms",
@@ -392,11 +392,11 @@ func TestExtractBody(t *testing.T) {
 		},
 		{
 			consumer.Message{
-				map[string]string{
+				Headers: map[string]string{
 					"X-Request-Id":      "tid_123123",
 					"Message-Timestamp": "2016-04-29T11:02:58.304Z",
 				},
-				`{
+				Body: `{
 				   "uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c",
 				   "id": "4492075574001",
 				   "name": "Mediterranian: Storms",
