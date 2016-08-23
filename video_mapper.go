@@ -264,16 +264,8 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 		return marshalledPubEvent, uuid, err
 	}
 	publishedDate, _ := getPublishedDate(brightcoveVideo) // at this point we know there is no error
-	mediaType := ""
-	fileName, err := get("original_filename", brightcoveVideo)
-	if err != nil {
-		warnLogger.Printf("%v - original_filename field of native brightcove video JSON is null, mediaType will be null.", publishReference)
-	} else {
-		mediaType, err = buildMediaType(fileName)
-		if err != nil {
-			warnLogger.Printf("%v - building mediaType error: [%v], mediaType will be null.", publishReference, err)
-		}
-	}
+	mediaType := getMediaType(brightcoveVideo, publishReference)
+
 	i := identifier{
 		Authority:       brigthcoveAuthority,
 		IdentifierValue: id,
@@ -378,6 +370,20 @@ func getBody(video map[string]interface{}) string {
 		decidedBody = longDescription
 	}
 	return "<body>" + decidedBody + "</body>";
+}
+
+func getMediaType(brightcoveVideo map[string]interface{}, publishReference string) (mediaType string) {
+	mediaType = ""
+	fileName, err := get("original_filename", brightcoveVideo)
+	if err != nil {
+		warnLogger.Printf("%v - original_filename field of native brightcove video JSON is null, mediaType will be null.", publishReference)
+	} else {
+		mediaType, err = buildMediaType(fileName)
+		if err != nil {
+			warnLogger.Printf("%v - building mediaType error: [%v], mediaType will be null.", publishReference, err)
+		}
+	}
+	return mediaType
 }
 
 func get(key string, brightcoveVideo map[string]interface{}) (val string, err error) {
