@@ -47,6 +47,8 @@ type brand struct {
 
 type payload struct {
 	UUID             string       `json:"uuid"`
+	Title            string       `json:"title"`
+	Byline           string       `json:"byline,omitempty"`
 	Identifiers      []identifier `json:"identifiers"`
 	Brands           []brand      `json:"brands"`
 	PublishedDate    string       `json:"publishedDate"`
@@ -226,7 +228,7 @@ func (v videoMapper) queueConsume(m consumer.Message) {
 	infoLogger.Printf("%v - Mapped and sent for uuid: %v", tid, contentUUID)
 }
 
-func (v videoMapper) mapMessage(m consumer.Message) (marshalledPubEvent []byte, uuid string, err error) {
+func (v videoMapper) mapMessage(m consumer.Message) ([]byte, string, error) {
 	var brightcoveVideo map[string]interface{}
 	if err := json.Unmarshal([]byte(m.Body), &brightcoveVideo); err != nil {
 		return nil, "", fmt.Errorf("Video JSON from Brightcove couldn't be unmarshalled. Skipping invalid JSON: %v", m.Body)
@@ -265,7 +267,11 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 	}
 	publishedDate, _ := getPublishedDate(brightcoveVideo) // at this point we know there is no error
 	mediaType := getMediaType(brightcoveVideo, publishReference)
-
+	title, err := get("name", brightcoveVideo)
+	if err != nil {
+		return nil, uuid, err
+	}
+	byline := getByline(brightcoveVideo, publishReference)
 	i := identifier{
 		Authority:       brigthcoveAuthority,
 		IdentifierValue: id,
@@ -276,6 +282,8 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 	body := getBody(brightcoveVideo)
 	p := &payload{
 		UUID:             uuid,
+		Title:            title,
+		Byline:           byline,
 		Identifiers:      []identifier{i},
 		Brands:           []brand{b},
 		PublishedDate:    publishedDate,
@@ -384,6 +392,26 @@ func getMediaType(brightcoveVideo map[string]interface{}, publishReference strin
 		}
 	}
 	return mediaType
+}
+
+func getByline(brightcoveVideo map[string]interface{}, publishReference string) string {
+	byline := ""
+	customFields, ok := brightcoveVideo["custom_fields"]
+	if !ok {
+		warnLogger.Printf("%v - custom_fields field of native brightcove video JSON is null, byline will be empty.", publishReference)
+		return ""
+	}
+	customFieldsMap, okMap := customFields.(map[string]interface{})
+	if !okMap {
+		warnLogger.Printf("%v - custom_fields field of native brightcove video JSON is not in valid json format, byline will be empty.", publishReference)
+		return ""
+	}
+	var err error
+	byline, err = get("byline", customFieldsMap)
+	if err != nil {
+		warnLogger.Printf("%v - custom_fields.byline field of native brightcove video JSON is null, byline will be null.", publishReference)
+	}
+	return byline
 }
 
 func get(key string, brightcoveVideo map[string]interface{}) (val string, err error) {
