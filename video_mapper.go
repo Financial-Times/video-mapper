@@ -273,6 +273,7 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 	mediaType := getMediaType(brightcoveVideo, publishReference)
 	title, err := get("name", brightcoveVideo)
 	if err != nil {
+		warnLogger.Printf("%v - name field of native brightcove video JSON is null, title would be empty, can't allow that, skipping %v .", publishReference, uuid)
 		return nil, uuid, err
 	}
 	byline := getByline(brightcoveVideo, publishReference)
@@ -402,18 +403,18 @@ func getByline(brightcoveVideo map[string]interface{}, publishReference string) 
 	byline := ""
 	customFields, ok := brightcoveVideo["custom_fields"]
 	if !ok {
-		warnLogger.Printf("%v - custom_fields field of native brightcove video JSON is null, byline will be empty.", publishReference)
+		infoLogger.Printf("%v - custom_fields field of native brightcove video JSON is null, byline will be empty.", publishReference)
 		return ""
 	}
 	customFieldsMap, okMap := customFields.(map[string]interface{})
 	if !okMap {
-		warnLogger.Printf("%v - custom_fields field of native brightcove video JSON is not in valid json format, byline will be empty.", publishReference)
+		infoLogger.Printf("%v - custom_fields field of native brightcove video JSON is not in valid json format, byline will be empty.", publishReference)
 		return ""
 	}
 	var err error
 	byline, err = get("byline", customFieldsMap)
 	if err != nil {
-		warnLogger.Printf("%v - custom_fields.byline field of native brightcove video JSON is null, byline will be null.", publishReference)
+		infoLogger.Printf("%v - custom_fields.byline field of native brightcove video JSON is null, byline will be null.", publishReference)
 	}
 	return byline
 }
