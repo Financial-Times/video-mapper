@@ -20,6 +20,7 @@ import (
 	"io/ioutil"
 	"strings"
 	"time"
+	"html"
 )
 
 const videoContentURIBase = "http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/"
@@ -382,7 +383,7 @@ func getBody(video map[string]interface{}) string {
 	if longDescription != "" {
 		decidedBody = longDescription
 	}
-	return "<body>" + decidedBody + "</body>"
+	return "<body>" + html.EscapeString(decidedBody) + "</body>"
 }
 
 func getMediaType(brightcoveVideo map[string]interface{}, publishReference string) (mediaType string) {
