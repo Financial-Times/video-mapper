@@ -30,6 +30,7 @@ const brightcoveOrigin = "http://cmdb.ft.com/systems/brightcove"
 const dateFormat = "2006-01-02T03:04:05.000Z0700"
 const ftBrandID = "http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"
 const defaultVideoBody = "video"
+const publishedDate = "published_at"
 
 type publicationEvent struct {
 	ContentURI   string   `json:"contentUri"`
@@ -331,8 +332,8 @@ func unsafeJSONMarshal(v interface{}) ([]byte, error) {
 	return b, nil
 }
 
-func isPublishEvent(video map[string]interface{}) (_ bool, err error) {
-	_, err = getPublishedDate(video)
+func isPublishEvent(video map[string]interface{}) (bool, error) {
+	_, err := getPublishedDate(video)
 	if err == nil {
 		return true, nil
 	}
@@ -367,7 +368,7 @@ func createHeader(tid string) map[string]string {
 }
 
 func getPublishedDate(video map[string]interface{}) (string, error) {
-	publishedAt, err1 := get("published_at", video)
+	publishedAt, err1 := get(publishedDate, video)
 	if err1 == nil {
 		return publishedAt, nil
 	}
@@ -425,8 +426,8 @@ func getByline(brightcoveVideo map[string]interface{}, publishReference string) 
 	return byline
 }
 
-func getFirstPublishedDate(video map[string]interface{}) (result string) {
-	result, err := get("published_at", video)
+func getFirstPublishedDate(video map[string]interface{}) string {
+	result, err := get(publishedDate, video)
 	if err != nil {
 		warnLogger.Printf("No valid value could be found for firstPublishedDate: [%v]", err)
 	}
