@@ -17,10 +17,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
 	"github.com/satori/go.uuid"
+	"html"
 	"io/ioutil"
 	"strings"
 	"time"
-	"html"
 )
 
 const videoContentURIBase = "http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/"
@@ -30,6 +30,7 @@ const brightcoveOrigin = "http://cmdb.ft.com/systems/brightcove"
 const dateFormat = "2006-01-02T03:04:05.000Z0700"
 const ftBrandID = "http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"
 const defaultVideoBody = "video"
+const publishedDate = "published_at"
 
 type publicationEvent struct {
 	ContentURI   string   `json:"contentUri"`
@@ -47,16 +48,17 @@ type brand struct {
 }
 
 type payload struct {
-	UUID             string       `json:"uuid"`
-	Title            string       `json:"title"`
-	Byline           string       `json:"byline,omitempty"`
-	Identifiers      []identifier `json:"identifiers"`
-	Brands           []brand      `json:"brands"`
-	PublishedDate    string       `json:"publishedDate"`
-	MediaType        string       `json:"mediaType,omitempty"`
-	PublishReference string       `json:"publishReference"`
-	LastModified     string       `json:"lastModified"`
-	Body             string       `json:"body"`
+	UUID               string       `json:"uuid"`
+	Title              string       `json:"title"`
+	Byline             string       `json:"byline,omitempty"`
+	Identifiers        []identifier `json:"identifiers"`
+	Brands             []brand      `json:"brands"`
+	PublishedDate      string       `json:"publishedDate"`
+	MediaType          string       `json:"mediaType,omitempty"`
+	PublishReference   string       `json:"publishReference"`
+	LastModified       string       `json:"lastModified"`
+	FirstPublishedDate string       `json:"firstPublishedDate"`
+	Body               string       `json:"body"`
 }
 
 type videoMapper struct {
@@ -132,7 +134,7 @@ func main() {
 		infoLogger.Println(prettyPrintConfig(consumerConfig, producerConfig))
 		messageProducer := producer.NewMessageProducer(producerConfig)
 		var v videoMapper
-		v = videoMapper{nil, &messageProducer}
+		v = videoMapper{messageConsumer: nil, messageProducer: &messageProducer}
 		messageConsumer := consumer.NewConsumer(consumerConfig, v.queueConsume, http.Client{})
 		v.messageConsumer = &messageConsumer
 		hc := &healthcheck{client: http.Client{}, consumerConf: consumerConfig}
@@ -286,23 +288,27 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 		ID: ftBrandID,
 	}
 	body := getBody(brightcoveVideo)
+
+	firstPublishedDate := getFirstPublishedDate(brightcoveVideo)
+
 	p := &payload{
-		UUID:             uuid,
-		Title:            title,
-		Byline:           byline,
-		Identifiers:      []identifier{i},
-		Brands:           []brand{b},
-		PublishedDate:    publishedDate,
-		MediaType:        mediaType,
-		PublishReference: publishReference,
-		LastModified:     lastModified,
-		Body:             body,
+		UUID:               uuid,
+		Title:              title,
+		Byline:             byline,
+		Identifiers:        []identifier{i},
+		Brands:             []brand{b},
+		PublishedDate:      publishedDate,
+		MediaType:          mediaType,
+		PublishReference:   publishReference,
+		LastModified:       lastModified,
+		FirstPublishedDate: firstPublishedDate,
+		Body:               body,
 	}
 	marshalledPubEvent, err = buildAndMarshalPublicationEvent(p, contentURI, lastModified, publishReference)
 	return marshalledPubEvent, uuid, err
 }
 
-func buildAndMarshalPublicationEvent(p *payload, contentURI, lastModified, pubRef string) (marshalledPubEvent []byte, err error) {
+func buildAndMarshalPublicationEvent(p *payload, contentURI, lastModified, pubRef string) (_ []byte, err error) {
 	e := publicationEvent{
 		ContentURI:   contentURI,
 		Payload:      p,
@@ -326,8 +332,8 @@ func unsafeJSONMarshal(v interface{}) ([]byte, error) {
 	return b, nil
 }
 
-func isPublishEvent(video map[string]interface{}) (publishEvent bool, err error) {
-	_, err = getPublishedDate(video)
+func isPublishEvent(video map[string]interface{}) (bool, error) {
+	_, err := getPublishedDate(video)
 	if err == nil {
 		return true, nil
 	}
@@ -338,7 +344,7 @@ func isPublishEvent(video map[string]interface{}) (publishEvent bool, err error)
 	return false, fmt.Errorf("Could not detect event type for video: [%#v]", video)
 }
 
-func buildMediaType(fileName string) (mediaType string, err error) {
+func buildMediaType(fileName string) (string, error) {
 	dot := strings.LastIndex(fileName, ".")
 	if dot == -1 {
 		return "", fmt.Errorf("extension is missing: [%s]", fileName)
@@ -361,8 +367,8 @@ func createHeader(tid string) map[string]string {
 	}
 }
 
-func getPublishedDate(video map[string]interface{}) (val string, err error) {
-	publishedAt, err1 := get("published_at", video)
+func getPublishedDate(video map[string]interface{}) (string, error) {
+	publishedAt, err1 := get(publishedDate, video)
 	if err1 == nil {
 		return publishedAt, nil
 	}
@@ -420,7 +426,16 @@ func getByline(brightcoveVideo map[string]interface{}, publishReference string) 
 	return byline
 }
 
-func get(key string, brightcoveVideo map[string]interface{}) (val string, err error) {
+func getFirstPublishedDate(video map[string]interface{}) string {
+	result, err := get(publishedDate, video)
+	if err != nil {
+		warnLogger.Printf("No valid value could be found for firstPublishedDate: [%v]", err)
+	}
+
+	return result
+}
+
+func get(key string, brightcoveVideo map[string]interface{}) (val string, _ error) {
 	valueI, ok := brightcoveVideo[key]
 	if !ok {
 		return "", fmt.Errorf("[%s] field of native brightcove video JSON is null", key)

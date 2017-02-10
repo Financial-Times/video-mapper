@@ -94,7 +94,7 @@ func TestExtractUuid_NormalCase(t *testing.T) {
 			"bad50c54-76d9-30e9-8734-b999c708aa4c",
 			`{` +
 				`"contentUri":"http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
-				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","title":"Mediterranian: Storms","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","mediaType":"video/mp4","publishReference":"tid_123123","lastModified":"2016-04-29T11:02:58.304Z","body":"<body>video</body>"},` +
+				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","title":"Mediterranian: Storms","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","mediaType":"video/mp4","publishReference":"tid_123123","lastModified":"2016-04-29T11:02:58.304Z","firstPublishedDate":"2015-09-17T17:41:20.782Z","body":"<body>video</body>"},` +
 				`"lastModified":"2016-04-29T11:02:58.304Z"` +
 				`}`,
 		},
@@ -113,7 +113,7 @@ func TestExtractUuid_NormalCase(t *testing.T) {
 			"bad50c54-76d9-30e9-8734-b999c708aa4c",
 			`{` +
 				`"contentUri":"http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
-				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","title":"Mediterranian: Storms","byline":"Waving sea","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","mediaType":"video/mp4","publishReference":"tid_123123","lastModified":"2016-04-29T10:59:39.914Z","body":"<body>video</body>"},` +
+				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","title":"Mediterranian: Storms","byline":"Waving sea","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","mediaType":"video/mp4","publishReference":"tid_123123","lastModified":"2016-04-29T10:59:39.914Z","firstPublishedDate":"2015-09-17T17:41:20.782Z","body":"<body>video</body>"},` +
 				`"lastModified":"2016-04-29T10:59:39.914Z"` +
 				`}`,
 		},
@@ -134,7 +134,7 @@ func TestExtractUuid_NormalCase(t *testing.T) {
 			"bad50c54-76d9-30e9-8734-b999c708aa4c",
 			`{` +
 				`"contentUri":"http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
-				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","title":"Mediterranian: Storms","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","publishReference":"tid_123123","lastModified":"2016-04-29T11:02:58.304Z","body":"<body>video</body>"},` +
+				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","title":"Mediterranian: Storms","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","publishReference":"tid_123123","lastModified":"2016-04-29T11:02:58.304Z","firstPublishedDate":"2015-09-17T17:41:20.782Z","body":"<body>video</body>"},` +
 				`"lastModified":"2016-04-29T11:02:58.304Z"` +
 				`}`,
 		},
@@ -187,7 +187,7 @@ func TestIsPublishEvent_PublishedAtFieldPresent_PublishEventAndNoErr(t *testing.
 		t.Errorf("Expected success. Found err: [%v]", err)
 	}
 	if !publishEvent {
-		t.Errorf("Expected publish event")
+		t.Error("Expected publish event")
 	}
 }
 
@@ -202,7 +202,7 @@ func TestIsPublishEvent_PublishedAtMissingErrorCodePresent_UnpublishEventAndNoEr
 		t.Errorf("Expected success. Found err: [%v]", err)
 	}
 	if publishEvent {
-		t.Errorf("Expected unpublish event")
+		t.Error("Expected unpublish event")
 	}
 }
 
@@ -212,7 +212,7 @@ func TestIsPublishEvent_PublishedAtAndErrorCodeBothMissing_ReturnError(t *testin
 		"uuid": "bad50c54-76d9-30e9-8734-b999c708aa4c",
 	}
 	if _, err := isPublishEvent(video); err == nil {
-		t.Errorf("Expected error")
+		t.Error("Expected error")
 	}
 }
 
@@ -255,7 +255,7 @@ func TestBuildMediaType_InvalidFilenames_ReturnError(t *testing.T) {
 			t.Errorf("Expected empty media type. Received: [%v]", actual)
 		}
 		if err == nil {
-			t.Errorf("Expected error")
+			t.Error("Expected error")
 		}
 	}
 }
@@ -322,7 +322,7 @@ func TestExtractBody(t *testing.T) {
 			},
 			`{` +
 				`"contentUri":"http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
-				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","title":"Mediterranian: Storms","byline":"Waving sea","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","mediaType":"video/mp4","publishReference":"tid_123123","lastModified":"2016-04-29T10:59:39.914Z","body":"<body>video</body>"},` +
+				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","title":"Mediterranian: Storms","byline":"Waving sea","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","mediaType":"video/mp4","publishReference":"tid_123123","lastModified":"2016-04-29T10:59:39.914Z","firstPublishedDate":"2015-09-17T17:41:20.782Z","body":"<body>video</body>"},` +
 				`"lastModified":"2016-04-29T10:59:39.914Z"` +
 				`}`,
 		},
@@ -343,7 +343,7 @@ func TestExtractBody(t *testing.T) {
 			},
 			`{` +
 				`"contentUri":"http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
-				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","title":"Mediterranian: Storms","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","publishReference":"tid_123123","lastModified":"2016-04-29T11:02:58.304Z","body":"<body>Jamil Anderlini looks for the real economy of Pyongyang</body>"},` +
+				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","title":"Mediterranian: Storms","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","publishReference":"tid_123123","lastModified":"2016-04-29T11:02:58.304Z","firstPublishedDate":"2015-09-17T17:41:20.782Z","body":"<body>Jamil Anderlini looks for the real economy of Pyongyang</body>"},` +
 				`"lastModified":"2016-04-29T11:02:58.304Z"` +
 				`}`,
 		},
@@ -364,7 +364,7 @@ func TestExtractBody(t *testing.T) {
 			},
 			`{` +
 				`"contentUri":"http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
-				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","title":"Mediterranian: Storms","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","publishReference":"tid_123123","lastModified":"2016-04-29T11:02:58.304Z","body":"<body>Jamil Anderlini looks for the real economy of Pyongyang</body>"},` +
+				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","title":"Mediterranian: Storms","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","publishReference":"tid_123123","lastModified":"2016-04-29T11:02:58.304Z","firstPublishedDate":"2015-09-17T17:41:20.782Z","body":"<body>Jamil Anderlini looks for the real economy of Pyongyang</body>"},` +
 				`"lastModified":"2016-04-29T11:02:58.304Z"` +
 				`}`,
 		},
@@ -386,7 +386,7 @@ func TestExtractBody(t *testing.T) {
 			},
 			`{` +
 				`"contentUri":"http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
-				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","title":"Mediterranian: Storms","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","publishReference":"tid_123123","lastModified":"2016-04-29T11:02:58.304Z","body":"<body>Jamil Anderlini \u0026lt;looks\u0026gt; for the real economy of Pyongyang</body>"},` +
+				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","title":"Mediterranian: Storms","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","publishReference":"tid_123123","lastModified":"2016-04-29T11:02:58.304Z","firstPublishedDate":"2015-09-17T17:41:20.782Z","body":"<body>Jamil Anderlini \u0026lt;looks\u0026gt; for the real economy of Pyongyang</body>"},` +
 				`"lastModified":"2016-04-29T11:02:58.304Z"` +
 				`}`,
 		},
@@ -406,7 +406,7 @@ func TestExtractBody(t *testing.T) {
 			},
 			`{` +
 				`"contentUri":"http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/bad50c54-76d9-30e9-8734-b999c708aa4c",` +
-				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","title":"Mediterranian: Storms","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","publishReference":"tid_123123","lastModified":"2016-04-29T11:02:58.304Z","body":"<body>video</body>"},` +
+				`"payload":{"uuid":"bad50c54-76d9-30e9-8734-b999c708aa4c","title":"Mediterranian: Storms","identifiers":[{"authority":"http://api.ft.com/system/BRIGHTCOVE","identifierValue":"4492075574001"}],"brands":[{"id":"http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54"}],"publishedDate":"2015-09-17T17:41:20.782Z","publishReference":"tid_123123","lastModified":"2016-04-29T11:02:58.304Z","firstPublishedDate":"2015-09-17T17:41:20.782Z","body":"<body>video</body>"},` +
 				`"lastModified":"2016-04-29T11:02:58.304Z"` +
 				`}`,
 		},
@@ -422,6 +422,33 @@ func TestExtractBody(t *testing.T) {
 		actualMarshalledEventS := string(actualMarshalledEvent)
 		if actualMarshalledEventS != test.marshalledEvent {
 			t.Errorf("Error mapping message\n%v\nExpected: %s\nActual: %s\n", test.message, test.marshalledEvent, actualMarshalledEventS)
+		}
+	}
+}
+
+func TestGetFirstPublishedDate(t *testing.T) {
+	var testCases = []struct {
+		video        map[string]interface{}
+		expectedDate interface{}
+	}{
+		{
+			map[string]interface{}{
+				"published_at": "2015-09-17T16:08:37.108Z",
+			},
+			"2015-09-17T16:08:37.108Z",
+		},
+		{
+			map[string]interface{}{
+				"published_at": nil,
+			},
+			"",
+		},
+	}
+
+	for _, tc := range testCases {
+		firstPublishedDate := getFirstPublishedDate(tc.video)
+		if firstPublishedDate != tc.expectedDate {
+			t.Errorf("Expected: firstPublishedDate: [%v]\nActual: firstPublishedDate: [%v]", tc.expectedDate, firstPublishedDate)
 		}
 	}
 }
