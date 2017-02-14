@@ -35,7 +35,7 @@ func (h *healthcheck) messageQueueProxyReachable() fthealth.Check {
 	return fthealth.Check{
 		BusinessImpact:   "Publishing or updating videos will not be possible, clients will not see the new content.",
 		Name:             "MessageQueueProxyReachable",
-		PanicGuide:       "https://sites.google.com/a/ft.com/technology/systems/dynamic-semantic-publishing/extra-publishing/video-mapper",
+		PanicGuide:       "https://dewey.ft.com/up-vm.html",
 		Severity:         1,
 		TechnicalSummary: "Message queue proxy is not reachable/healthy",
 		Checker:          h.checkAggregateMessageQueueProxiesReachable,
