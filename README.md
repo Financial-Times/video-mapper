@@ -9,9 +9,7 @@ Listens to kafka(-bridge) NativeCmsPublicationEvents, gets videos, transforms th
 export Q_ADDR="http://172.23.53.64:8080" ## you'll have to change the address to your queue
 export Q_GROUP=videoMapper
 export Q_READ_TOPIC=NativeCmsPublicationEvents
-export Q_READ_QUEUE=kafka
 export Q_WRITE_TOPIC=CmsPublicationEvents
-export Q_WRITE_QUEUE=kafka
 export Q_AUTHORIZATION=$(etcdctl get /ft/_credentials/kafka-bridge/authorization_key) ## this is not exact, you'll have to get it from the cluster's etcd
 go build
 ./video-mapper
@@ -29,9 +27,7 @@ docker run -p 8080 \
     --env "Q_ADDR=http://172.23.53.64:8080" \
     --env "Q_GROUP=videoMapper" \
     --env "Q_READ_TOPIC=NativeCmsPublicationEvents" \
-    --env "Q_READ_QUEUE=kafka" \
     --env "Q_WRITE_TOPIC=CmsPublicationEvents" \
-    --env "Q_WRITE_QUEUE=kafka" \
     --env "Q_AUTHORIZATION=$Q_AUTHORIZATION"
     video-mapper
 ```

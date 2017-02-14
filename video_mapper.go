@@ -12,15 +12,16 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"html"
+	"io/ioutil"
+	"strings"
+	"time"
+
 	"github.com/Financial-Times/message-queue-go-producer/producer"
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
 	"github.com/satori/go.uuid"
-	"html"
-	"io/ioutil"
-	"strings"
-	"time"
 )
 
 const videoContentURIBase = "http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/"
@@ -86,23 +87,11 @@ func main() {
 		Desc:   "The topic to read the meassages from.",
 		EnvVar: "Q_READ_TOPIC",
 	})
-	readQueue := app.String(cli.StringOpt{
-		Name:   "read-queue",
-		Value:  "",
-		Desc:   "The queue to read the meassages from.",
-		EnvVar: "Q_READ_QUEUE",
-	})
 	writeTopic := app.String(cli.StringOpt{
 		Name:   "write-topic",
 		Value:  "",
 		Desc:   "The topic to write the meassages to.",
 		EnvVar: "Q_WRITE_TOPIC",
-	})
-	writeQueue := app.String(cli.StringOpt{
-		Name:   "write-queue",
-		Value:  "",
-		Desc:   "The queue to write the meassages to.",
-		EnvVar: "Q_WRITE_QUEUE",
 	})
 	authorization := app.String(cli.StringOpt{
 		Name:   "authorization",
@@ -120,7 +109,6 @@ func main() {
 			Addrs:                *addresses,
 			Group:                *group,
 			Topic:                *readTopic,
-			Queue:                *readQueue,
 			ConcurrentProcessing: false,
 			AutoCommitEnable:     true,
 			AuthorizationKey:     *authorization,
@@ -128,7 +116,6 @@ func main() {
 		producerConfig := producer.MessageProducerConfig{
 			Addr:          (*addresses)[0],
 			Topic:         *writeTopic,
-			Queue:         *writeQueue,
 			Authorization: *authorization,
 		}
 		infoLogger.Println(prettyPrintConfig(consumerConfig, producerConfig))
@@ -452,9 +439,9 @@ func prettyPrintConfig(c consumer.QueueConfig, p producer.MessageProducerConfig)
 }
 
 func prettyPrintConsumerConfig(c consumer.QueueConfig) string {
-	return fmt.Sprintf("consumerConfig: [\n\t\taddr: [%v]\n\t\tgroup: [%v]\n\t\ttopic: [%v]\n\t\treadQueueHeader: [%v]\n\t]", c.Addrs, c.Group, c.Topic, c.Queue)
+	return fmt.Sprintf("consumerConfig: [\n\t\taddr: [%v]\n\t\tgroup: [%v]\n\t\ttopic: [%v]\n\t]", c.Addrs, c.Group, c.Topic)
 }
 
 func prettyPrintProducerConfig(p producer.MessageProducerConfig) string {
-	return fmt.Sprintf("producerConfig: [\n\t\taddr: [%v]\n\t\ttopic: [%v]\n\t\twriteQueueHeader: [%v]\n\t]", p.Addr, p.Topic, p.Queue)
+	return fmt.Sprintf("producerConfig: [\n\t\taddr: [%v]\n\t\ttopic: [%v]\n\t]", p.Addr, p.Topic)
 }

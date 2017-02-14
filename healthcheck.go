@@ -46,7 +46,7 @@ func (h *healthcheck) messageQueueProxyReachable() fthealth.Check {
 func (h *healthcheck) checkAggregateMessageQueueProxiesReachable() error {
 	errMsg := ""
 	for i := 0; i < len(h.consumerConf.Addrs); i++ {
-		err := h.checkMessageQueueProxyReachable(h.consumerConf.Addrs[i], h.consumerConf.Topic, h.consumerConf.AuthorizationKey, h.consumerConf.Queue)
+		err := h.checkMessageQueueProxyReachable(h.consumerConf.Addrs[i], h.consumerConf.Topic, h.consumerConf.AuthorizationKey)
 		if err == nil {
 			return nil
 		}
@@ -55,7 +55,7 @@ func (h *healthcheck) checkAggregateMessageQueueProxiesReachable() error {
 	return errors.New(errMsg)
 }
 
-func (h *healthcheck) checkMessageQueueProxyReachable(address string, topic string, authKey string, queue string) error {
+func (h *healthcheck) checkMessageQueueProxyReachable(address string, topic string, authKey string) error {
 	req, err := http.NewRequest("GET", address+"/topics", nil)
 	if err != nil {
 		warnLogger.Printf("Could not connect to proxy: %v", err.Error())
@@ -63,9 +63,6 @@ func (h *healthcheck) checkMessageQueueProxyReachable(address string, topic stri
 	}
 	if len(authKey) > 0 {
 		req.Header.Add("Authorization", authKey)
-	}
-	if len(queue) > 0 {
-		req.Host = queue
 	}
 	resp, err := h.client.Do(req)
 	if err != nil {
