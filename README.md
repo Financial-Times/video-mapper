@@ -60,7 +60,9 @@ You should receive a response body like:
     "publishReference": "tid_123123",
     "lastModified": "2016-04-29T11:02:58.269Z"
   },
-  "lastModified": "2016-04-29T11:02:58.269Z"
+  "lastModified": "2016-04-29T11:02:58.269Z",
+  "firstPublishedDate":"2016-04-29T11:02:58.000Z",
+  "canBeDistributed": "verify"
 }
 ```
 
