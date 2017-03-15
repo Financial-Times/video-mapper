@@ -62,7 +62,7 @@ You should receive a response body like:
   },
   "lastModified": "2016-04-29T11:02:58.269Z",
   "firstPublishedDate":"2016-04-29T11:02:58.000Z",
-  "canBeDistributed": "verify"
+  "canBeDistributed": "yes"
 }
 ```
 
