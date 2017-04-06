@@ -32,6 +32,7 @@ const ftBrandID = "http://api.ft.com/things/dbb0bdae-1f0c-11e4-b0cb-b2227cce2b54
 const defaultVideoBody = "video"
 const publishedDate = "published_at"
 const canBeDistributedYes = "yes"
+const typeVideo = "Video"
 
 type publicationEvent struct {
 	ContentURI   string   `json:"contentUri"`
@@ -61,6 +62,7 @@ type payload struct {
 	FirstPublishedDate string       `json:"firstPublishedDate"`
 	CanBeDistributed   string       `json:"canBeDistributed"`
 	Body               string       `json:"body"`
+	Type               string       `json:"type"`
 }
 
 type videoMapper struct {
@@ -306,6 +308,7 @@ func (v videoMapper) mapBrightcoveVideo(brightcoveVideo map[string]interface{}, 
 		FirstPublishedDate: firstPublishedDate,
 		CanBeDistributed:   canBeDistributedYes,
 		Body:               body,
+		Type:               typeVideo,
 	}
 	marshalledPubEvent, err = buildAndMarshalPublicationEvent(p, contentURI, lastModified, publishReference)
 	return marshalledPubEvent, uuid, err
