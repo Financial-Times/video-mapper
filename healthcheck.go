@@ -34,9 +34,7 @@ func (h *healthcheck) messageQueueCheck() fthealth.Check {
 		PanicGuide:       "https://dewey.ft.com/up-vm.html",
 		Severity:         1,
 		TechnicalSummary: "Message queue proxy is not reachable/healthy",
-		Checker: func() (string, error) {
-			return h.checkAggregateMessageQueueProxiesReachable()
-		},
+		Checker: h.checkAggregateMessageQueueProxiesReachable,
 	}
 }
 
