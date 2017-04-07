@@ -1,0 +1,57 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "2dtgENfeO6SICvxjruwb9f1CzLY=",
+			"path": "github.com/Financial-Times/go-fthealth/v1_1",
+			"revision": "bc27ed19189994eef0364e4a07879d5a3f3be76f",
+			"revisionTime": "2017-03-24T12:21:32Z",
+			"version": "0.2.0",
+			"versionExact": "0.2.0"
+		},
+		{
+			"checksumSHA1": "yceqWuIbFzntmSHl66OwNoP/c6E=",
+			"path": "github.com/Financial-Times/message-queue-go-producer/producer",
+			"revision": "163efbf93f1a2ba839b317d26e37426bcfa3850a",
+			"revisionTime": "2017-03-20T10:55:12Z",
+			"version": "v0.1.0",
+			"versionExact": "v0.1.0"
+		},
+		{
+			"checksumSHA1": "/kMYtkcxWV4dZNvJaEGkDUwt3TA=",
+			"path": "github.com/Financial-Times/message-queue-gonsumer/consumer",
+			"revision": "4e173298922ba4c10721b1b5b3e0d35be7f162e9",
+			"revisionTime": "2017-03-20T10:34:32Z",
+			"version": "0.3.0",
+			"versionExact": "0.3.0"
+		},
+		{
+			"checksumSHA1": "g/V4qrXjUGG9B+e3hB+4NAYJ5Gs=",
+			"path": "github.com/gorilla/context",
+			"revision": "08b5f424b9271eedf6f9f0ce86cb9396ed337a42",
+			"revisionTime": "2016-08-17T18:46:32Z"
+		},
+		{
+			"checksumSHA1": "F5dR3/i70EhSIMZfeIV+H8/PtvM=",
+			"path": "github.com/gorilla/mux",
+			"revision": "392c28fe23e1c45ddba891b0320b3b5df220beea",
+			"revisionTime": "2017-01-18T13:43:44Z",
+			"version": "v1.3.0",
+			"versionExact": "v1.3.0"
+		},
+		{
+			"checksumSHA1": "pYoO37aSFZl2uJAXpePBDnGItZc=",
+			"path": "github.com/jawher/mow.cli",
+			"revision": "d3ffbc2f98b83e09dc8efd55ecec75eb5fd656ec",
+			"revisionTime": "2017-02-20T22:51:54Z"
+		},
+		{
+			"checksumSHA1": "zmC8/3V4ls53DJlNTKDZwPSC/dA=",
+			"path": "github.com/satori/go.uuid",
+			"revision": "b061729afc07e77a8aa4fad0a2fd840958f1942a",
+			"revisionTime": "2016-09-27T10:08:44Z"
+		}
+	],
+	"rootPath": "github.com/Financial-Times/video-mapper"
+}

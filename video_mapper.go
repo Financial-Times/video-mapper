@@ -12,6 +12,9 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
+	"github.com/Financial-Times/service-status-go/gtg"
+	"github.com/Financial-Times/service-status-go/httphandlers"
 	"github.com/Financial-Times/message-queue-go-producer/producer"
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
 	"github.com/gorilla/mux"
@@ -21,6 +24,7 @@ import (
 	"io/ioutil"
 	"strings"
 	"time"
+	"github.com/gorilla/handlers"
 )
 
 const videoContentURIBase = "http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/"
@@ -66,12 +70,18 @@ type payload struct {
 }
 
 type videoMapper struct {
-	messageConsumer *consumer.Consumer
+	messageConsumer *consumer.MessageConsumer
 	messageProducer *producer.MessageProducer
 }
 
 func main() {
 	app := cli.App("video-mapper", "Catch native video content transform into Content and send back to queue.")
+	appSystemCode := app.String(cli.StringOpt{
+		Name:   "app-system-code",
+		Value:  "video-mapper",
+		Desc:   "The system code of this service",
+		EnvVar: "APP_SYSTEM_CODE",
+	})
 	addresses := app.Strings(cli.StringsOpt{
 		Name:   "queue-addresses",
 		Value:  nil,
@@ -139,9 +149,13 @@ func main() {
 		messageProducer := producer.NewMessageProducer(producerConfig)
 		var v videoMapper
 		v = videoMapper{messageConsumer: nil, messageProducer: &messageProducer}
-		messageConsumer := consumer.NewConsumer(consumerConfig, v.queueConsume, http.Client{})
+		messageConsumer := consumer.NewConsumer(consumerConfig, v.queueConsume, &http.Client{})
 		v.messageConsumer = &messageConsumer
-		hc := &healthcheck{client: http.Client{}, consumerConf: consumerConfig}
+		hc := &healthcheck{
+			client: http.Client{},
+			consumerConf: consumerConfig,
+			appSystemCode: *appSystemCode,
+		}
 		go v.listen(hc)
 		v.consumeUntilSigterm()
 	}
@@ -153,9 +167,12 @@ func main() {
 
 func (v videoMapper) listen(hc *healthcheck) {
 	r := mux.NewRouter()
+
 	r.HandleFunc("/map", v.mapHandler).Methods("POST")
-	r.HandleFunc("/__health", hc.healthcheck()).Methods("GET")
-	r.HandleFunc("/__gtg", hc.gtg).Methods("GET")
+
+	r.Path("/__health").Handler(handlers.MethodHandler{"GET": http.HandlerFunc(fthealth.Handler(hc.createHC()))})
+	gtgHandler := httphandlers.NewGoodToGoHandler(gtg.StatusChecker(hc.gtgCheck))
+	r.Path("/__gtg").Handler(handlers.MethodHandler{"GET": http.HandlerFunc(gtgHandler)})
 
 	http.Handle("/", r)
 	port := 8080 //hardcoded for now
@@ -171,13 +188,13 @@ func (v videoMapper) consumeUntilSigterm() {
 	var consumerWaitGroup sync.WaitGroup
 	consumerWaitGroup.Add(1)
 	go func() {
-		v.messageConsumer.Start()
+		(*v.messageConsumer).Start()
 		consumerWaitGroup.Done()
 	}()
 	ch := make(chan os.Signal)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 	<-ch
-	v.messageConsumer.Stop()
+	(*v.messageConsumer).Stop()
 	consumerWaitGroup.Wait()
 }
 
