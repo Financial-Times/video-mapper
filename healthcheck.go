@@ -8,8 +8,8 @@ import (
 	"net/http"
 
 	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
-	"github.com/Financial-Times/service-status-go/gtg"
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
+	"github.com/Financial-Times/service-status-go/gtg"
 )
 
 type healthcheck struct {
@@ -20,10 +20,10 @@ type healthcheck struct {
 
 func (h *healthcheck) createHC() fthealth.HC {
 	return fthealth.HealthCheck{
-		SystemCode: h.appSystemCode,
+		SystemCode:  h.appSystemCode,
 		Description: "Maps video's native format to FT's Content structure.",
-		Name: "video-mapper",
-		Checks: []fthealth.Check{h.messageQueueCheck()},
+		Name:        "video-mapper",
+		Checks:      []fthealth.Check{h.messageQueueCheck()},
 	}
 }
 
@@ -34,7 +34,7 @@ func (h *healthcheck) messageQueueCheck() fthealth.Check {
 		PanicGuide:       "https://dewey.ft.com/up-vm.html",
 		Severity:         1,
 		TechnicalSummary: "Message queue proxy is not reachable/healthy",
-		Checker: h.checkAggregateMessageQueueProxiesReachable,
+		Checker:          h.checkAggregateMessageQueueProxiesReachable,
 	}
 }
 

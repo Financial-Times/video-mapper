@@ -13,10 +13,11 @@ import (
 	"errors"
 	"fmt"
 	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
-	"github.com/Financial-Times/service-status-go/gtg"
-	"github.com/Financial-Times/service-status-go/httphandlers"
 	"github.com/Financial-Times/message-queue-go-producer/producer"
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
+	"github.com/Financial-Times/service-status-go/gtg"
+	"github.com/Financial-Times/service-status-go/httphandlers"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
 	"github.com/satori/go.uuid"
@@ -24,7 +25,6 @@ import (
 	"io/ioutil"
 	"strings"
 	"time"
-	"github.com/gorilla/handlers"
 )
 
 const videoContentURIBase = "http://brightcove-video-model-mapper-iw-uk-p.svc.ft.com/video/model/"
@@ -152,8 +152,8 @@ func main() {
 		messageConsumer := consumer.NewConsumer(consumerConfig, v.queueConsume, &http.Client{})
 		v.messageConsumer = &messageConsumer
 		hc := &healthcheck{
-			client: http.Client{},
-			consumerConf: consumerConfig,
+			client:        http.Client{},
+			consumerConf:  consumerConfig,
 			appSystemCode: *appSystemCode,
 		}
 		go v.listen(hc)
