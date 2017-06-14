@@ -1,3 +1,6 @@
+*DECOMISSIONED*
+See [UPP NEXT VIDEO MAPPER](https://github.com/Financial-Times/upp-next-video-mapper) instead
+
 # video-mapper
 [![Circle CI](https://circleci.com/gh/Financial-Times/video-mapper/tree/master.png?style=shield)](https://circleci.com/gh/Financial-Times/video-mapper/tree/master)
 
